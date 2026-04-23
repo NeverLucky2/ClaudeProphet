@@ -1,6 +1,9 @@
 // Prophet Agent Harness - Autonomous trading agent with phased heartbeat
 // Uses claude CLI subprocess for auth (OAuth/API key handled by CLI)
 import { spawn, execSync } from 'child_process';
+
+const OPENCODE_BIN = process.platform === 'win32' ? 'cmd.exe' : 'opencode';
+const OPENCODE_WIN_PREFIX = process.platform === 'win32' ? ['/c', 'opencode.cmd'] : [];
 import { EventEmitter } from 'events';
 import fs from 'fs/promises';
 import path from 'path';
@@ -634,7 +637,7 @@ ${userBlock}`;
    * Run opencode as subprocess with MCP tools and stream JSON events
    */
   _runClaude(prompt, model) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const sessionEpoch = this._sessionEpoch;
       // OpenCode model format: anthropic/claude-sonnet-4-6
       const ocModel = model?.includes('/') ? model : `anthropic/${model || 'claude-sonnet-4-6'}`;
@@ -661,6 +664,20 @@ ${userBlock}`;
         ? `[SYSTEM INSTRUCTIONS - Follow these at all times]\n${this.systemPrompt}\n\n[END SYSTEM INSTRUCTIONS]\n\n${prompt}`
         : prompt;
 
+      // On Windows, cmd.exe cannot handle multi-line strings or long prompts as
+      // command-line args (EINVAL). Always write to a temp file and attach via
+      // --file. The message must come before --file so yargs doesn't consume it
+      // as a second file path (--file is an array type).
+      let tempPromptFile = null;
+      if (process.platform === 'win32') {
+        const os = await import('os');
+        tempPromptFile = path.join(os.tmpdir(), `prophet_prompt_${Date.now()}.txt`);
+        await fs.writeFile(tempPromptFile, fullPrompt, 'utf-8');
+        args.push('Process the full prompt from the attached file.', '--file', tempPromptFile);
+      } else {
+        args.push(fullPrompt);
+      }
+
       if (!this._isMessageBeat) {
         this.state.emit('agent_log', {
           message: `Spawning opencode (${ocModel})...`,
@@ -668,10 +685,13 @@ ${userBlock}`;
         });
       }
 
-      const proc = spawn('opencode', args, {
+      const proc = spawn(OPENCODE_BIN, [...OPENCODE_WIN_PREFIX, ...args], {
         cwd: process.cwd(),
         env: {
           ...process.env,
+          // Map CLAUDE_API_KEY → ANTHROPIC_API_KEY so opencode uses the correct key
+          // rather than whatever may be stored in its own auth file.
+          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
           ...this.opencodeEnv,
           OPENPROPHET_SANDBOX_ID: this.sandboxId || '',
           OPENPROPHET_ACCOUNT_ID: this.state.activeAccountId || this.accountId || '',
@@ -683,11 +703,7 @@ ${userBlock}`;
       this._proc = proc;
       this._interrupted = false;
 
-      // Write prompt via stdin then close it
-      proc.stdin.on('error', (err) => {
-        this.state.emit('agent_log', { message: `stdin error: ${err.message}`, level: 'error' });
-      });
-      proc.stdin.write(fullPrompt);
+      proc.stdin.on('error', () => {});
       proc.stdin.end();
 
       let fullText = '';
@@ -696,6 +712,16 @@ ${userBlock}`;
       let buffer = '';
       let totalCost = 0;
       let totalTokens = 0;
+      let ocError = null;
+
+      const makeCtx = () => ({
+        addToolCall: () => toolCalls++,
+        addText: (t) => { fullText += t; },
+        setSession: (id) => { sessionId = id; },
+        addCost: (c) => { totalCost += c; },
+        addTokens: (t) => { totalTokens += t; },
+        setError: (e) => { ocError = e; },
+      });
 
       proc.stdout.on('data', (chunk) => {
         buffer += chunk.toString();
@@ -706,13 +732,7 @@ ${userBlock}`;
           if (!line.trim()) continue;
           try {
             const event = JSON.parse(line);
-            this._handleOpenCodeEvent(event, {
-              addToolCall: () => toolCalls++,
-              addText: (t) => { fullText += t; },
-              setSession: (id) => { sessionId = id; },
-              addCost: (c) => { totalCost += c; },
-              addTokens: (t) => { totalTokens += t; },
-            });
+            this._handleOpenCodeEvent(event, makeCtx());
           } catch { /* skip unparseable lines */ }
         }
       });
@@ -732,18 +752,13 @@ ${userBlock}`;
         // Clear proc reference and cancel safety timeout
         this._proc = null;
         if (this._beatTimeout) { clearTimeout(this._beatTimeout); this._beatTimeout = null; }
+        if (tempPromptFile) fs.unlink(tempPromptFile).catch(() => {});
 
         // Process remaining buffer
         if (buffer.trim()) {
           try {
             const event = JSON.parse(buffer);
-            this._handleOpenCodeEvent(event, {
-              addToolCall: () => toolCalls++,
-              addText: (t) => { fullText += t; },
-              setSession: (id) => { sessionId = id; },
-              addCost: (c) => { totalCost += c; },
-              addTokens: (t) => { totalTokens += t; },
-            });
+            this._handleOpenCodeEvent(event, makeCtx());
           } catch {}
         }
 
@@ -769,7 +784,9 @@ ${userBlock}`;
           level: code === 0 ? 'info' : 'warning',
         });
 
-        if (code !== 0 && code !== null && !fullText) {
+        if (ocError) {
+          resolve({ error: ocError, text: fullText, toolCalls, sessionId, sessionEpoch });
+        } else if (code !== 0 && code !== null && !fullText) {
           resolve({ error: `opencode exited with code ${code} signal ${signal}`, text: fullText, toolCalls, sessionId, sessionEpoch });
         } else if (signal && !fullText) {
           resolve({ error: `opencode killed by ${signal}`, text: fullText, toolCalls, sessionId, sessionEpoch });
@@ -798,8 +815,9 @@ ${userBlock}`;
   _handleOpenCodeEvent(event, ctx) {
     const beatNum = this.state.beatCount;
 
-    // Capture session ID from any event
-    if (event.sessionID && !this._sessionId) {
+    // Always update session ID — captures new sessions and handles the case
+    // where opencode created a fresh session because the old one was invalid.
+    if (event.sessionID) {
       ctx.setSession(event.sessionID);
     }
 
@@ -852,8 +870,15 @@ ${userBlock}`;
         break;
       }
 
+      case 'error': {
+        const errData = event.error || {};
+        const msg = errData?.data?.message || errData?.message || JSON.stringify(errData);
+        this.state.emit('agent_log', { message: `[opencode error] ${msg}`, level: 'error' });
+        ctx.setError(msg);
+        break;
+      }
+
       case 'step_start':
-        // Just informational, nothing to do
         break;
     }
   }

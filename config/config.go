@@ -11,7 +11,7 @@ type Config struct {
 	AlpacaSecretKey   string
 	AlpacaBaseURL     string
 	AlpacaPaper       bool
-	GeminiAPIKey      string
+	ClaudeAPIKey      string
 	DatabasePath      string
 	ServerPort        string
 	EnableLogging     bool
@@ -30,7 +30,7 @@ func Load() error {
 		AlpacaSecretKey:   os.Getenv("ALPACA_SECRET_KEY"),
 		AlpacaBaseURL:     getEnvOrDefault("ALPACA_BASE_URL", "https://paper-api.alpaca.markets"),
 		AlpacaPaper:       getEnvOrDefault("ALPACA_PAPER", "true") == "true",
-		GeminiAPIKey:      os.Getenv("GEMINI_API_KEY"),
+		ClaudeAPIKey:      os.Getenv("CLAUDE_API_KEY"),
 		DatabasePath:      getEnvOrDefault("DATABASE_PATH", "./data/prophet_trader.db"),
 		ServerPort:        getEnvOrDefault("PORT", getEnvOrDefault("SERVER_PORT", "4534")),
 		EnableLogging:     getEnvOrDefault("ENABLE_LOGGING", "true") == "true",

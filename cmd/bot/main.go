@@ -84,11 +84,11 @@ func main() {
 	economicFeedsService := services.NewEconomicFeedsService()
 	economicFeedsController := controllers.NewEconomicFeedsController(economicFeedsService)
 
-	// Create Gemini service and intelligence controller
-	geminiService := services.NewGeminiService(cfg.GeminiAPIKey)
+	// Create Claude service and intelligence controller
+	claudeService := services.NewClaudeService(cfg.ClaudeAPIKey)
 	analysisService := services.NewTechnicalAnalysisService(dataService)
-	stockAnalysisService := services.NewStockAnalysisService(dataService, newsService, geminiService)
-	intelligenceController := controllers.NewIntelligenceController(newsService, geminiService, analysisService, stockAnalysisService, dataService)
+	stockAnalysisService := services.NewStockAnalysisService(dataService, newsService, claudeService)
+	intelligenceController := controllers.NewIntelligenceController(newsService, claudeService, analysisService, stockAnalysisService, dataService)
 
 	// Test account connection
 	logger.Info("Testing Alpaca connection...")
@@ -161,6 +161,7 @@ func main() {
 
 func setupRouter(orderController *controllers.OrderController, newsController *controllers.NewsController, intelligenceController *controllers.IntelligenceController, positionController *controllers.PositionManagementController, activityController *controllers.ActivityController, economicFeedsController *controllers.EconomicFeedsController) *gin.Engine {
 	router := gin.Default()
+	router.SetTrustedProxies([]string{"127.0.0.1"})
 
 	// Enable CORS
 	router.Use(func(c *gin.Context) {

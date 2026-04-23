@@ -135,11 +135,12 @@ export class AgentOrchestrator extends EventEmitter {
 
   async _ensureBinary() {
     if (this._binaryReady) return;
-    const binaryPath = path.join(this.projectRoot, 'prophet_bot');
+    const binaryName = process.platform === 'win32' ? 'prophet_bot.exe' : 'prophet_bot';
+    const binaryPath = path.join(this.projectRoot, binaryName);
     try {
       await fs.access(binaryPath);
     } catch {
-      execSync('go build -o prophet_bot ./cmd/bot', {
+      execSync(`go build -o ${binaryName} ./cmd/bot`, {
         cwd: this.projectRoot,
         timeout: 60000,
         stdio: 'pipe',
@@ -170,7 +171,8 @@ export class AgentOrchestrator extends EventEmitter {
       OPENPROPHET_ACCOUNT_ID: account.id,
     };
 
-    const binaryPath = path.join(this.projectRoot, 'prophet_bot');
+    const binaryName = process.platform === 'win32' ? 'prophet_bot.exe' : 'prophet_bot';
+    const binaryPath = path.join(this.projectRoot, binaryName);
     runtime.goProc = spawn(binaryPath, [], {
       cwd: this.projectRoot,
       env,

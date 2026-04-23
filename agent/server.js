@@ -8,6 +8,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn, execSync } from 'child_process';
+
+const OPENCODE_BIN = process.platform === 'win32' ? 'cmd.exe' : 'opencode';
+const OPENCODE_WIN_PREFIX = process.platform === 'win32' ? ['/c', 'opencode.cmd'] : [];
 import axios from 'axios';
 import { AgentHarness, buildSystemPrompt } from './harness.js';
 import ChatStore from './chat-store.js';
@@ -75,12 +78,13 @@ async function startGoBackend(account) {
   }
 
   // Build binary if needed
-  const binaryPath = path.join(PROJECT_ROOT, 'prophet_bot');
+  const binaryName = process.platform === 'win32' ? 'prophet_bot.exe' : 'prophet_bot';
+  const binaryPath = path.join(PROJECT_ROOT, binaryName);
   try {
     const fs = await import('fs');
     if (!fs.existsSync(binaryPath)) {
       console.log('  Building Go binary...');
-      execSync('go build -o prophet_bot ./cmd/bot', { cwd: PROJECT_ROOT, timeout: 60000 });
+      execSync(`go build -o ${binaryName} ./cmd/bot`, { cwd: PROJECT_ROOT, timeout: 60000 });
     }
   } catch (err) {
     console.error('  Failed to build Go binary:', err.message);
@@ -177,9 +181,20 @@ async function stopGoBackend() {
   // Kill any orphaned Go backend on the port (but NOT our own Node process)
   const myPid = process.pid;
   try {
-    const pids = execSync(`lsof -t -i :${TRADING_BOT_PORT} -sTCP:LISTEN 2>/dev/null`, { encoding: 'utf-8' }).trim();
-    if (pids) {
-      for (const pid of pids.split('\n')) {
+    let pids = '';
+    if (process.platform === 'win32') {
+      const out = execSync(`netstat -ano -p TCP 2>NUL`, { encoding: 'utf-8' });
+      for (const line of out.split('\n')) {
+        if (line.includes(`:${TRADING_BOT_PORT}`) && line.includes('LISTENING')) {
+          const pid = parseInt(line.trim().split(/\s+/).pop());
+          if (pid && pid !== myPid) pids += pid + '\n';
+        }
+      }
+    } else {
+      pids = execSync(`lsof -t -i :${TRADING_BOT_PORT} -sTCP:LISTEN 2>/dev/null`, { encoding: 'utf-8' }).trim();
+    }
+    if (pids.trim()) {
+      for (const pid of pids.trim().split('\n')) {
         const p = parseInt(pid);
         if (p && p !== myPid) {
           try { process.kill(p, 'SIGTERM'); } catch {}
@@ -587,14 +602,28 @@ ${message.trim()}${customPromptAddition}`;
     // Kill any existing manager process
     if (_managerProc) { try { _managerProc.kill('SIGTERM'); } catch {} }
 
-    const proc = spawn('opencode', args, {
+    // On Windows, cmd.exe cannot handle multiline prompts as CLI args — write to temp file
+    let tempPromptFile = null;
+    if (process.platform === 'win32') {
+      const os = await import('os');
+      tempPromptFile = path.join(os.tmpdir(), `prophet_mgr_${Date.now()}.txt`);
+      await fs.writeFile(tempPromptFile, fullPrompt, 'utf-8');
+      args.push('Process the full prompt from the attached file.', '--file', tempPromptFile);
+    }
+
+    const proc = spawn(OPENCODE_BIN, [...OPENCODE_WIN_PREFIX, ...args], {
       cwd: process.cwd(),
-      env: { ...process.env },
+      env: {
+        ...process.env,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
+      },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     _managerProc = proc;
 
-    proc.stdin.write(fullPrompt);
+    if (process.platform !== 'win32') {
+      proc.stdin.write(fullPrompt);
+    }
     proc.stdin.end();
 
     // Return immediately - streaming happens via SSE
@@ -635,7 +664,7 @@ ${message.trim()}${customPromptAddition}`;
     proc.stderr.on('data', () => {});
     proc.on('close', () => {
       if (_managerProc === proc) _managerProc = null;
-      // Update session tracking
+      if (tempPromptFile) fs.unlink(tempPromptFile).catch(() => {});
       const last = _managerSessions[_managerSessions.length - 1];
       if (last && !last.id && _managerSessionId) last.id = _managerSessionId;
       broadcast('manager_done', {});
@@ -1456,7 +1485,7 @@ app.get('/api/auth/status', (req, res) => {
 
 app.post('/api/auth/login', (req, res) => {
   // Spawn opencode auth login and capture the URL
-  const proc = spawn('opencode', ['auth', 'login'], {
+  const proc = spawn(OPENCODE_BIN, [...OPENCODE_WIN_PREFIX, 'auth', 'login'], {
     stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env, BROWSER: 'echo' }, // prevent auto-opening browser
   });

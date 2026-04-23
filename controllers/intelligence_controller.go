@@ -13,17 +13,17 @@ import (
 // IntelligenceController handles AI-powered intelligence operations
 type IntelligenceController struct {
 	newsService          *services.NewsService
-	geminiService        *services.GeminiService
+	claudeService        *services.ClaudeService
 	analysisService      *services.TechnicalAnalysisService
 	stockAnalysisService *services.StockAnalysisService
 	dataService          interfaces.DataService
 }
 
 // NewIntelligenceController creates a new intelligence controller
-func NewIntelligenceController(newsService *services.NewsService, geminiService *services.GeminiService, analysisService *services.TechnicalAnalysisService, stockAnalysisService *services.StockAnalysisService, dataService interfaces.DataService) *IntelligenceController {
+func NewIntelligenceController(newsService *services.NewsService, claudeService *services.ClaudeService, analysisService *services.TechnicalAnalysisService, stockAnalysisService *services.StockAnalysisService, dataService interfaces.DataService) *IntelligenceController {
 	return &IntelligenceController{
 		newsService:          newsService,
-		geminiService:        geminiService,
+		claudeService:        claudeService,
 		analysisService:      analysisService,
 		stockAnalysisService: stockAnalysisService,
 		dataService:          dataService,
@@ -106,8 +106,8 @@ func (ic *IntelligenceController) HandleGetCleanedNews(c *gin.Context) {
 		return
 	}
 
-	// Clean the news using Gemini
-	cleanedNews, err := ic.geminiService.CleanNewsForTrading(allNews)
+	// Clean the news using Claude
+	cleanedNews, err := ic.claudeService.CleanNewsForTrading(allNews)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to clean news",
@@ -151,7 +151,7 @@ func (ic *IntelligenceController) HandleGetQuickMarketIntelligence(c *gin.Contex
 	}
 
 	// Clean the news
-	cleanedNews, err := ic.geminiService.CleanNewsForTrading(allNews)
+	cleanedNews, err := ic.claudeService.CleanNewsForTrading(allNews)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "Failed to generate intelligence",

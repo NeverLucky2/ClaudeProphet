@@ -242,8 +242,9 @@
     .terminal-search-bar input:focus { outline: none; border-color: var(--accent); }
     .terminal-search-bar input::placeholder { color: var(--ink-faint); }
     .terminal-search-bar select {
-      padding: 5px 8px; border: 1px solid var(--rule); background: var(--paper);
+      padding: 5px 4px; border: 1px solid var(--rule); background: var(--paper);
       color: var(--ink); font-size: 12px; font-family: 'Source Sans 3', sans-serif;
+      width: 80px; flex-shrink: 0;
     }
     .terminal-search-bar .search-count {
       font-size: 11px; color: var(--ink-faint); font-family: 'IBM Plex Mono', monospace;
@@ -443,7 +444,7 @@
       /* Search bar mobile */
       .terminal-search-bar { padding: 4px 8px; flex-wrap: wrap; }
       .terminal-search-bar input { font-size: 13px; min-width: 0; }
-      .terminal-search-bar select { font-size: 12px; }
+      .terminal-search-bar select { font-size: 12px; width: 80px; }
       
       /* Cards mobile */
       .config-card { padding: 10px; }
@@ -1741,6 +1742,7 @@ function renderSandboxTabs() {
   
   // Manager tab first
   ensureManagerTerminal();
+  refreshManagerDropdowns();
   let html = '<div class="sandbox-tab ' + (currentSid === '_manager' ? 'active' : '') + '" onclick="switchSandboxTab(\'_manager\')" style="border-right:1px solid var(--border)">'
     + '<span class="dot" style="background:var(--accent)"></span><span>Manager</span></div>';
   
@@ -1777,18 +1779,11 @@ function ensureManagerTerminal() {
   wrapper.style.height = '100%';
   wrapper.style.overflow = 'hidden';
   
-  // Build provider/model options
-  const models = config.models || [];
-  const providers = [...new Set(models.map(m => m.id.split('/')[0]))].sort();
   const mgr = config.manager || {};
-  const currentModel = mgr.model || config.activeModel || 'anthropic/claude-sonnet-4-6';
-  const currentProvider = currentModel.split('/')[0];
-  const provOpts = providers.map(p => '<option value="' + esc(p) + '"' + (p === currentProvider ? ' selected' : '') + '>' + esc(p) + '</option>').join('');
-  const modelOpts = models.filter(m => m.id.startsWith(currentProvider + '/')).map(m => '<option value="' + esc(m.id) + '"' + (m.id === currentModel ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('');
 
   wrapper.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap">'
-    + '<select id="mgr-provider" onchange="updateManagerModelDropdown()" style="padding:4px 6px;font-size:11px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:3px">' + provOpts + '</select>'
-    + '<select id="mgr-model" onchange="saveManagerModel()" style="padding:4px 6px;font-size:11px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:3px;max-width:200px">' + modelOpts + '</select>'
+    + '<select id="mgr-provider" onchange="updateManagerModelDropdown()" style="padding:4px 6px;font-size:11px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:3px"></select>'
+    + '<select id="mgr-model" onchange="saveManagerModel()" style="padding:4px 6px;font-size:11px;background:var(--bg-dark);color:var(--text);border:1px solid var(--border);border-radius:3px;max-width:200px"></select>'
     + '<button class="btn sm" onclick="newManagerSession()" style="font-size:10px;padding:3px 8px">New Chat</button>'
     + '<button class="btn sm" onclick="stopManager()" style="font-size:10px;padding:3px 8px" id="mgr-stop-btn">Stop</button>'
     + '<button class="btn sm" onclick="toggleManagerSettings()" style="font-size:10px;padding:3px 8px">Settings</button>'
@@ -1808,6 +1803,26 @@ function ensureManagerTerminal() {
     + '</div>';
   container.appendChild(wrapper);
   sandboxTerminals['_manager'] = { el: wrapper, termEl: wrapper.querySelector('[data-terminal]') };
+}
+
+function refreshManagerDropdowns() {
+  const provSel = document.getElementById('mgr-provider');
+  const modelSel = document.getElementById('mgr-model');
+  if (!provSel || !modelSel) return;
+  const models = config.models || [];
+  if (models.length === 0) return;
+  const mgr = config.manager || {};
+  const currentModel = mgr.model || config.activeModel || 'anthropic/claude-sonnet-4-6';
+  const currentProvider = currentModel.split('/')[0];
+  const providers = [...new Set(models.map(m => m.id.split('/')[0]))].sort();
+  // Only rebuild if options changed
+  const newProvHtml = providers.map(p => '<option value="' + esc(p) + '"' + (p === currentProvider ? ' selected' : '') + '>' + esc(p) + '</option>').join('');
+  if (provSel.innerHTML !== newProvHtml) provSel.innerHTML = newProvHtml;
+  provSel.value = currentProvider;
+  const filteredModels = models.filter(m => m.id.startsWith(provSel.value + '/'));
+  const newModelHtml = filteredModels.map(m => '<option value="' + esc(m.id) + '"' + (m.id === currentModel ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('');
+  if (modelSel.innerHTML !== newModelHtml) modelSel.innerHTML = newModelHtml;
+  if (currentModel && filteredModels.some(m => m.id === currentModel)) modelSel.value = currentModel;
 }
 
 function updateManagerModelDropdown() {
