@@ -62,287 +62,301 @@
     }
     [data-theme="dark"] body::before { opacity: 0.02; }
 
-    /* ── Sunrise Forest Theme ──────────────────────────────── */
-    [data-theme="sunrise-forest"] {
-      --paper:        rgba(238, 249, 226, 0.75);
-      --paper-dark:   rgba(218, 242, 205, 0.75);
-      --paper-darker: rgba(198, 232, 183, 0.73);
-      --ink:          #18391e;
-      --ink-light:    #2a4c30;
-      --ink-muted:    #48684a;
-      --ink-faint:    #789878;
-      --accent:       #2e7d32;
-      --accent-dark:  #1b5e20;
-      --accent-light: #558b2f;
-      --success:      #2e7d32;
-      --success-bg:   rgba(76, 175, 80, 0.18);
+    /* ── Sunset Forest Theme ──────────────────────────────── */
+    [data-theme="sunset-forest"] {
+      --paper:        rgba(255, 236, 195, 0.80);
+      --paper-dark:   rgba(250, 215, 162, 0.80);
+      --paper-darker: rgba(242, 192, 125, 0.78);
+      --ink:          #1a0600;
+      --ink-light:    #3d1200;
+      --ink-muted:    #7a3518;
+      --ink-faint:    #b06020;
+      --accent:       #ff6d00;
+      --accent-dark:  #e65100;
+      --accent-light: #ff9100;
+      --success:      #33691e;
+      --success-bg:   rgba(51, 105, 30, 0.20);
       --error:        #b71c1c;
       --error-bg:     rgba(183, 28, 28, 0.12);
-      --warning:      #bf6e00;
-      --warning-bg:   rgba(191, 110, 0, 0.15);
-      --rule:         rgba(120, 185, 115, 0.52);
-      --rule-light:   rgba(165, 215, 150, 0.38);
-      --code-bg:      rgba(218, 242, 205, 0.65);
-      --bg-dark:      rgba(218, 242, 205, 0.70);
-      --bg-darker:    rgba(198, 232, 183, 0.72);
-      --bg-panel:     rgba(238, 249, 226, 0.75);
-      --border:       rgba(120, 185, 115, 0.52);
-      --text:         #18391e;
-      --glass-tint:      rgba(208, 250, 185, 0.32);
-      --glass-edge:      rgba(135, 208, 118, 0.62);
-      --glass-glow:      rgba(55, 148, 58, 0.14);
-      --glass-highlight: rgba(255, 255, 255, 0.52);
-      --glass-deep:      rgba(255, 255, 255, 0.42);
+      --warning:      #f57f17;
+      --warning-bg:   rgba(245, 127, 23, 0.16);
+      --rule:         rgba(195, 105, 40, 0.55);
+      --rule-light:   rgba(230, 155, 80, 0.40);
+      --code-bg:      rgba(250, 215, 162, 0.68);
+      --bg-dark:      rgba(250, 215, 162, 0.74);
+      --bg-darker:    rgba(242, 192, 125, 0.76);
+      --bg-panel:     rgba(255, 236, 195, 0.80);
+      --border:       rgba(195, 105, 40, 0.55);
+      --text:         #1a0600;
+      /* Amber firelight through a glass bottle — warm gold with ember core */
+      --glass-tint:      rgba(255, 148, 38, 0.28);
+      --glass-edge:      rgba(210, 82, 12, 0.68);
+      --glass-glow:      rgba(168, 46, 4, 0.20);
+      --glass-highlight: rgba(255, 228, 138, 0.62);
+      --glass-deep:      rgba(255, 205, 90, 0.38);
     }
-    [data-theme="sunrise-forest"] body {
+    [data-theme="sunset-forest"] body {
       background: linear-gradient(158deg,
-        #a5d6a7 0%, #c5e1a5 18%, #f0f4c3 38%,
-        #fff8e1 52%, #ffe082 65%, #a5d6a7 88%);
-      background-size: 280% 280%;
-      animation: themeBgDrift 28s ease infinite;
+        #2e7d32 0%,
+        #e65100 14%,
+        #ff8f00 28%,
+        #ffd54f 44%,
+        #558b2f 58%,
+        #1b5e20 72%,
+        #6a1b9a 86%,
+        #2e7d32 100%);
+      background-size: 300% 300%;
+      animation: themeBgDrift 32s ease infinite;
     }
-    [data-theme="sunrise-forest"] body::before { opacity: 0; }
+    [data-theme="sunset-forest"] body::before { opacity: 0; }
 
-    /* ── Sunset Beach Theme ────────────────────────────────── */
-    [data-theme="sunset-beach"] {
-      --paper:        rgba(255, 242, 226, 0.75);
-      --paper-dark:   rgba(255, 222, 196, 0.75);
-      --paper-darker: rgba(255, 200, 162, 0.73);
-      --ink:          #3c1800;
-      --ink-light:    #582800;
-      --ink-muted:    #885028;
-      --ink-faint:    #b07848;
-      --accent:       #e64a19;
-      --accent-dark:  #bf360c;
-      --accent-light: #ff6d00;
+    /* ── Sunrise Beach Theme ────────────────────────────────── */
+    [data-theme="sunrise-beach"] {
+      --paper:        rgba(242, 252, 255, 0.80);
+      --paper-dark:   rgba(212, 244, 252, 0.80);
+      --paper-darker: rgba(178, 232, 248, 0.78);
+      --ink:          #002f3e;
+      --ink-light:    #004a5e;
+      --ink-muted:    #1a6680;
+      --ink-faint:    #5a9ab5;
+      --accent:       #00838f;
+      --accent-dark:  #006064;
+      --accent-light: #4dd0e1;
       --success:      #00695c;
       --success-bg:   rgba(0, 105, 92, 0.15);
       --error:        #b71c1c;
       --error-bg:     rgba(183, 28, 28, 0.12);
       --warning:      #f57f17;
       --warning-bg:   rgba(245, 127, 23, 0.15);
-      --rule:         rgba(222, 138, 78, 0.52);
-      --rule-light:   rgba(248, 182, 128, 0.38);
-      --code-bg:      rgba(255, 228, 200, 0.65);
-      --bg-dark:      rgba(255, 222, 196, 0.70);
-      --bg-darker:    rgba(255, 200, 162, 0.72);
-      --bg-panel:     rgba(255, 242, 226, 0.75);
-      --border:       rgba(222, 138, 78, 0.52);
-      --text:         #3c1800;
-      --glass-tint:      rgba(255, 212, 158, 0.32);
-      --glass-edge:      rgba(242, 145, 80, 0.62);
-      --glass-glow:      rgba(192, 72, 14, 0.14);
-      --glass-highlight: rgba(255, 255, 255, 0.52);
-      --glass-deep:      rgba(255, 255, 255, 0.42);
+      --rule:         rgba(130, 198, 218, 0.55);
+      --rule-light:   rgba(178, 228, 242, 0.40);
+      --code-bg:      rgba(212, 244, 252, 0.68);
+      --bg-dark:      rgba(212, 244, 252, 0.74);
+      --bg-darker:    rgba(178, 232, 248, 0.76);
+      --bg-panel:     rgba(242, 252, 255, 0.80);
+      --border:       rgba(130, 198, 218, 0.55);
+      --text:         #002f3e;
+      /* Sea glass catching dawn — cool aqua with warm rose bloom at the rim */
+      --glass-tint:      rgba(168, 232, 248, 0.28);
+      --glass-edge:      rgba(0, 172, 193, 0.62);
+      --glass-glow:      rgba(0, 131, 143, 0.14);
+      --glass-highlight: rgba(255, 228, 220, 0.62);
+      --glass-deep:      rgba(210, 248, 255, 0.42);
     }
-    [data-theme="sunset-beach"] body {
+    [data-theme="sunrise-beach"] body {
       background: linear-gradient(158deg,
-        #ffccbc 0%, #ffe0b2 22%, #ffd54f 42%,
-        #ff8a65 58%, #f48fb1 76%, #ce93d8 92%);
-      background-size: 280% 280%;
-      animation: themeBgDrift 28s ease infinite;
+        #ffd54f 0%,
+        #ff8a65 13%,
+        #ffe082 27%,
+        #ffd54f 42%,
+        #80deea 58%,
+        #00838f 71%,
+        #4dd0e1 84%,
+        #ffd54f 96%);
+      background-size: 300% 300%;
+      animation: themeBgDrift 32s ease infinite;
     }
-    [data-theme="sunset-beach"] body::before { opacity: 0; }
+    [data-theme="sunrise-beach"] body::before { opacity: 0; }
 
     @keyframes themeBgDrift {
-      0%   { background-position: 0% 50%; }
+      0%   { background-position: 45% 50%; }
       50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      100% { background-position: 45% 50%; }
     }
 
     /* ── Glass Morphism (both themed modes) ────────────────── */
-    [data-theme="sunrise-forest"] .panel,
-    [data-theme="sunrise-forest"] .terminal-panel,
-    [data-theme="sunset-beach"] .panel,
-    [data-theme="sunset-beach"] .terminal-panel { background: transparent !important; }
+    [data-theme="sunset-forest"] .panel,
+    [data-theme="sunset-forest"] .terminal-panel,
+    [data-theme="sunrise-beach"] .panel,
+    [data-theme="sunrise-beach"] .terminal-panel { background: transparent !important; }
 
-    [data-theme="sunrise-forest"] .topbar,
-    [data-theme="sunset-beach"] .topbar {
+    [data-theme="sunset-forest"] .topbar,
+    [data-theme="sunrise-beach"] .topbar {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(22px) saturate(180%);
       -webkit-backdrop-filter: blur(22px) saturate(180%);
       border-bottom-color: var(--glass-edge) !important;
       box-shadow: 0 1px 0 var(--glass-highlight), 0 6px 28px var(--glass-glow);
     }
-    [data-theme="sunrise-forest"] .tabs,
-    [data-theme="sunset-beach"] .tabs {
+    [data-theme="sunset-forest"] .tabs,
+    [data-theme="sunrise-beach"] .tabs {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(18px) saturate(172%);
       -webkit-backdrop-filter: blur(18px) saturate(172%);
       border-bottom-color: var(--glass-edge) !important;
       box-shadow: inset 0 -1px 0 var(--glass-edge);
     }
-    [data-theme="sunrise-forest"] .tab.active,
-    [data-theme="sunset-beach"] .tab.active {
+    [data-theme="sunset-forest"] .tab.active,
+    [data-theme="sunrise-beach"] .tab.active {
       background: var(--glass-deep) !important;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 6px 6px 0 0;
     }
-    [data-theme="sunrise-forest"] .sandbox-tabs,
-    [data-theme="sunset-beach"] .sandbox-tabs {
+    [data-theme="sunset-forest"] .sandbox-tabs,
+    [data-theme="sunrise-beach"] .sandbox-tabs {
       background: rgba(0,0,0,0.08) !important;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
     }
-    [data-theme="sunrise-forest"] .sandbox-tab,
-    [data-theme="sunset-beach"] .sandbox-tab {
+    [data-theme="sunset-forest"] .sandbox-tab,
+    [data-theme="sunrise-beach"] .sandbox-tab {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(10px) saturate(155%);
       -webkit-backdrop-filter: blur(10px) saturate(155%);
     }
-    [data-theme="sunrise-forest"] .sandbox-tab.active,
-    [data-theme="sunset-beach"] .sandbox-tab.active {
+    [data-theme="sunset-forest"] .sandbox-tab.active,
+    [data-theme="sunrise-beach"] .sandbox-tab.active {
       background: var(--glass-deep) !important;
       box-shadow: 0 2px 14px var(--glass-glow);
     }
-    [data-theme="sunrise-forest"] .sandbox-page-picker,
-    [data-theme="sunset-beach"] .sandbox-page-picker {
+    [data-theme="sunset-forest"] .sandbox-page-picker,
+    [data-theme="sunrise-beach"] .sandbox-page-picker {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(14px) saturate(162%);
       -webkit-backdrop-filter: blur(14px) saturate(162%);
       border-color: var(--glass-edge) !important;
     }
-    [data-theme="sunrise-forest"] .sandbox-page-picker .spick.active,
-    [data-theme="sunset-beach"] .sandbox-page-picker .spick.active {
+    [data-theme="sunset-forest"] .sandbox-page-picker .spick.active,
+    [data-theme="sunrise-beach"] .sandbox-page-picker .spick.active {
       background: var(--glass-deep) !important;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       box-shadow: 0 1px 8px var(--glass-glow);
     }
-    [data-theme="sunrise-forest"] .sidebar,
-    [data-theme="sunset-beach"] .sidebar {
+    [data-theme="sunset-forest"] .sidebar,
+    [data-theme="sunrise-beach"] .sidebar {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(18px) saturate(168%);
       -webkit-backdrop-filter: blur(18px) saturate(168%);
       border-left-color: var(--glass-edge) !important;
       box-shadow: -6px 0 28px var(--glass-glow);
     }
-    [data-theme="sunrise-forest"] .footer,
-    [data-theme="sunset-beach"] .footer {
+    [data-theme="sunset-forest"] .footer,
+    [data-theme="sunrise-beach"] .footer {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(18px) saturate(168%);
       -webkit-backdrop-filter: blur(18px) saturate(168%);
       border-top-color: var(--glass-edge) !important;
       box-shadow: 0 -1px 0 var(--glass-highlight);
     }
-    [data-theme="sunrise-forest"] .terminal,
-    [data-theme="sunset-beach"] .terminal {
+    [data-theme="sunset-forest"] .terminal,
+    [data-theme="sunrise-beach"] .terminal {
       background: rgba(0,0,0,0.10) !important;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
     }
-    [data-theme="sunrise-forest"] .terminal-search-bar,
-    [data-theme="sunrise-forest"] .chat-input-bar,
-    [data-theme="sunset-beach"] .terminal-search-bar,
-    [data-theme="sunset-beach"] .chat-input-bar {
+    [data-theme="sunset-forest"] .terminal-search-bar,
+    [data-theme="sunset-forest"] .chat-input-bar,
+    [data-theme="sunrise-beach"] .terminal-search-bar,
+    [data-theme="sunrise-beach"] .chat-input-bar {
       background: var(--glass-tint) !important;
       backdrop-filter: blur(18px) saturate(165%);
       -webkit-backdrop-filter: blur(18px) saturate(165%);
       border-color: var(--glass-edge) !important;
     }
-    [data-theme="sunrise-forest"] .terminal-search-bar input,
-    [data-theme="sunrise-forest"] .chat-input-bar input,
-    [data-theme="sunset-beach"] .terminal-search-bar input,
-    [data-theme="sunset-beach"] .chat-input-bar input {
+    [data-theme="sunset-forest"] .terminal-search-bar input,
+    [data-theme="sunset-forest"] .chat-input-bar input,
+    [data-theme="sunrise-beach"] .terminal-search-bar input,
+    [data-theme="sunrise-beach"] .chat-input-bar input {
       background: var(--glass-deep) !important;
       border-color: var(--glass-edge) !important;
     }
-    [data-theme="sunrise-forest"] .card,
-    [data-theme="sunrise-forest"] .config-card,
-    [data-theme="sunrise-forest"] .trade-card,
-    [data-theme="sunrise-forest"] .hb-bar,
-    [data-theme="sunset-beach"] .card,
-    [data-theme="sunset-beach"] .config-card,
-    [data-theme="sunset-beach"] .trade-card,
-    [data-theme="sunset-beach"] .hb-bar {
+    [data-theme="sunset-forest"] .card,
+    [data-theme="sunset-forest"] .config-card,
+    [data-theme="sunset-forest"] .trade-card,
+    [data-theme="sunset-forest"] .hb-bar,
+    [data-theme="sunrise-beach"] .card,
+    [data-theme="sunrise-beach"] .config-card,
+    [data-theme="sunrise-beach"] .trade-card,
+    [data-theme="sunrise-beach"] .hb-bar {
       background: rgba(255,255,255,0.36) !important;
       backdrop-filter: blur(14px) saturate(162%);
       -webkit-backdrop-filter: blur(14px) saturate(162%);
       border-color: var(--glass-edge) !important;
       box-shadow: 0 2px 14px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
     }
-    [data-theme="sunrise-forest"] .card:hover,
-    [data-theme="sunrise-forest"] .config-card:hover,
-    [data-theme="sunrise-forest"] .trade-card:hover,
-    [data-theme="sunset-beach"] .card:hover,
-    [data-theme="sunset-beach"] .config-card:hover,
-    [data-theme="sunset-beach"] .trade-card:hover {
+    [data-theme="sunset-forest"] .card:hover,
+    [data-theme="sunset-forest"] .config-card:hover,
+    [data-theme="sunset-forest"] .trade-card:hover,
+    [data-theme="sunrise-beach"] .card:hover,
+    [data-theme="sunrise-beach"] .config-card:hover,
+    [data-theme="sunrise-beach"] .trade-card:hover {
       background: rgba(255,255,255,0.52) !important;
       box-shadow: 0 4px 22px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
     }
-    [data-theme="sunrise-forest"] .btn,
-    [data-theme="sunset-beach"] .btn {
+    [data-theme="sunset-forest"] .btn,
+    [data-theme="sunrise-beach"] .btn {
       background: rgba(255,255,255,0.32) !important;
       backdrop-filter: blur(10px) saturate(155%);
       -webkit-backdrop-filter: blur(10px) saturate(155%);
       border-color: var(--glass-edge) !important;
       box-shadow: 0 2px 8px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
     }
-    [data-theme="sunrise-forest"] .btn:hover,
-    [data-theme="sunset-beach"] .btn:hover {
+    [data-theme="sunset-forest"] .btn:hover,
+    [data-theme="sunrise-beach"] .btn:hover {
       background: rgba(255,255,255,0.52) !important;
       box-shadow: 0 4px 16px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
     }
-    [data-theme="sunrise-forest"] .btn.primary,
-    [data-theme="sunset-beach"] .btn.primary {
+    [data-theme="sunset-forest"] .btn.primary,
+    [data-theme="sunrise-beach"] .btn.primary {
       background: var(--accent) !important;
       border-color: transparent !important;
       backdrop-filter: blur(10px) saturate(150%);
       -webkit-backdrop-filter: blur(10px) saturate(150%);
       box-shadow: 0 3px 14px var(--glass-glow), inset 0 1px 0 rgba(255,255,255,0.35);
     }
-    [data-theme="sunrise-forest"] .btn.primary:hover,
-    [data-theme="sunset-beach"] .btn.primary:hover {
+    [data-theme="sunset-forest"] .btn.primary:hover,
+    [data-theme="sunrise-beach"] .btn.primary:hover {
       background: var(--accent-dark) !important;
       box-shadow: 0 5px 18px var(--glass-glow), inset 0 1px 0 rgba(255,255,255,0.35);
     }
-    [data-theme="sunrise-forest"] input[type="text"],
-    [data-theme="sunrise-forest"] input[type="number"],
-    [data-theme="sunrise-forest"] input[type="password"],
-    [data-theme="sunrise-forest"] select,
-    [data-theme="sunrise-forest"] textarea,
-    [data-theme="sunset-beach"] input[type="text"],
-    [data-theme="sunset-beach"] input[type="number"],
-    [data-theme="sunset-beach"] input[type="password"],
-    [data-theme="sunset-beach"] select,
-    [data-theme="sunset-beach"] textarea {
+    [data-theme="sunset-forest"] input[type="text"],
+    [data-theme="sunset-forest"] input[type="number"],
+    [data-theme="sunset-forest"] input[type="password"],
+    [data-theme="sunset-forest"] select,
+    [data-theme="sunset-forest"] textarea,
+    [data-theme="sunrise-beach"] input[type="text"],
+    [data-theme="sunrise-beach"] input[type="number"],
+    [data-theme="sunrise-beach"] input[type="password"],
+    [data-theme="sunrise-beach"] select,
+    [data-theme="sunrise-beach"] textarea {
       background: rgba(255,255,255,0.36) !important;
       backdrop-filter: blur(10px) saturate(155%);
       -webkit-backdrop-filter: blur(10px) saturate(155%);
       border-color: var(--glass-edge) !important;
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.06);
     }
-    [data-theme="sunrise-forest"] input:focus,
-    [data-theme="sunrise-forest"] select:focus,
-    [data-theme="sunrise-forest"] textarea:focus {
+    [data-theme="sunset-forest"] input:focus,
+    [data-theme="sunset-forest"] select:focus,
+    [data-theme="sunset-forest"] textarea:focus {
       background: rgba(255,255,255,0.55) !important;
       border-color: var(--accent) !important;
       box-shadow: 0 0 0 3px rgba(46,125,50,0.22) !important;
     }
-    [data-theme="sunset-beach"] input:focus,
-    [data-theme="sunset-beach"] select:focus,
-    [data-theme="sunset-beach"] textarea:focus {
+    [data-theme="sunrise-beach"] input:focus,
+    [data-theme="sunrise-beach"] select:focus,
+    [data-theme="sunrise-beach"] textarea:focus {
       background: rgba(255,255,255,0.55) !important;
       border-color: var(--accent) !important;
       box-shadow: 0 0 0 3px rgba(230,74,25,0.22) !important;
     }
-    [data-theme="sunrise-forest"] .modal-overlay,
-    [data-theme="sunset-beach"] .modal-overlay {
+    [data-theme="sunset-forest"] .modal-overlay,
+    [data-theme="sunrise-beach"] .modal-overlay {
       background: rgba(0,0,0,0.28) !important;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
     }
-    [data-theme="sunrise-forest"] .modal,
-    [data-theme="sunset-beach"] .modal {
+    [data-theme="sunset-forest"] .modal,
+    [data-theme="sunrise-beach"] .modal {
       background: rgba(255,255,255,0.48) !important;
       backdrop-filter: blur(28px) saturate(182%);
       -webkit-backdrop-filter: blur(28px) saturate(182%);
       border-color: var(--glass-edge) !important;
       box-shadow: 0 10px 48px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
     }
-    [data-theme="sunrise-forest"] #theme-toggle,
-    [data-theme="sunset-beach"] #theme-toggle {
+    [data-theme="sunset-forest"] #theme-toggle,
+    [data-theme="sunrise-beach"] #theme-toggle {
       background: rgba(255,255,255,0.30) !important;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -778,7 +792,7 @@
       <span id="sandbox-status-badge" style="display:none"></span>
       <span class="clock" id="clock"></span>
       <span id="topbar-account-label" style="font-size:12px;color:var(--ink-muted);font-weight:500"></span>
-      <button onclick="toggleDarkMode()" style="background:none;border:1px solid var(--rule);border-radius:4px;padding:4px 8px;cursor:pointer;font-size:14px;color:var(--ink-muted)" title="Light — click for Dark" id="theme-toggle">&#9789;</button>
+      <button onclick="toggleDarkMode()" style="background:none;border:1px solid var(--rule);border-radius:4px;padding:4px 8px;cursor:pointer;font-size:14px;color:var(--ink-muted)" title="Light — click for Dark" id="theme-toggle">🌲</button>
       <div class="status-pill">
         <div class="status-dot" id="status-dot"></div>
         <span id="status-text">Stopped</span>
@@ -1381,14 +1395,14 @@ function showToast(message, type) {
   setTimeout(function() { toast.remove(); }, 5000);
 }
 
-// Theme cycling: light → dark → sunrise-forest → sunset-beach → light
-var _THEMES = ['light', 'dark', 'sunrise-forest', 'sunset-beach'];
-var _THEME_ICONS = { 'light': '\u263D', 'dark': '🌲', 'sunrise-forest': '🌅', 'sunset-beach': '\u2600' };
+// Theme cycling: sunset-forest → sunrise-beach → dark → light → ...
+var _THEMES = ['sunset-forest', 'sunrise-beach', 'dark', 'light'];
+var _THEME_ICONS = { 'sunset-forest': '🌲', 'sunrise-beach': '🌊', 'dark': '\u263D', 'light': '\u2600' };
 var _THEME_TITLES = {
-  'light':          'Light — click for Dark',
-  'dark':           'Dark — click for Sunrise Forest',
-  'sunrise-forest': 'Sunrise Forest — click for Sunset Beach',
-  'sunset-beach':   'Sunset Beach — click for Light'
+  'sunset-forest':  'Sunset Forest — click for Sunrise Beach',
+  'sunrise-beach':  'Sunrise Beach — click for Dark',
+  'dark':           'Dark — click for Light',
+  'light':          'Light — click for Sunset Forest'
 };
 function _applyTheme(theme) {
   var html = document.documentElement;
@@ -1409,7 +1423,7 @@ function toggleDarkMode() {
 (function() {
   var saved = localStorage.getItem('theme');
   if (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches) { saved = 'dark'; }
-  _applyTheme(saved || 'light');
+  _applyTheme(saved || 'sunset-forest');
 })();
 function toggleMobileSidebar(sandboxId) {
   const wrapper = document.getElementById('term-wrap-' + sandboxId);
