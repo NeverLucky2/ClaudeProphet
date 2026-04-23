@@ -13,6 +13,7 @@ const OPENCODE_BIN = process.platform === 'win32' ? 'cmd.exe' : 'opencode';
 const OPENCODE_WIN_PREFIX = process.platform === 'win32' ? ['/c', 'opencode.cmd'] : [];
 import axios from 'axios';
 import { AgentHarness, buildSystemPrompt } from './harness.js';
+import { AnalysisScheduler } from './analysis-scheduler.js';
 import ChatStore from './chat-store.js';
 import AgentOrchestrator from './orchestrator.js';
 import { migrateLegacyDataForAccount } from './data-migration.js';
@@ -322,6 +323,16 @@ for (const evt of EVENTS) {
   });
 }
 
+// ── Analysis Scheduler ─────────────────────────────────────────────
+const scheduler = new AnalysisScheduler({ model: getConfig().activeModel || 'anthropic/claude-sonnet-4-6' });
+scheduler.on('agent_log', (data) => broadcast('agent_log', data));
+scheduler.on('scheduler_job_start', ({ job, date }) => broadcast('agent_log', {
+  message: `[Scheduler] Job started: ${job} for ${date}`, level: 'info', timestamp: new Date().toISOString(),
+}));
+scheduler.on('scheduler_job_end', ({ job, date, output }) => broadcast('agent_log', {
+  message: `[Scheduler] Job complete: ${job} → ${output}`, level: 'success', timestamp: new Date().toISOString(),
+}));
+
 // ── Slack Notification Dispatcher ──────────────────────────────────
 async function notifySlack(text, sandboxId) {
   try {
@@ -615,7 +626,7 @@ ${message.trim()}${customPromptAddition}`;
       cwd: process.cwd(),
       env: {
         ...process.env,
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
+        ANTHROPIC_API_KEY: process.env.CLAUDE_API_KEY || '',
       },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
@@ -1459,12 +1470,12 @@ app.get('/api/portfolio/orders', async (req, res) => {
 // ── Auth (OpenCode) ────────────────────────────────────────────────
 app.get('/api/auth/status', (req, res) => {
   // API key in env is the fastest check
-  if (process.env.ANTHROPIC_API_KEY) {
+  if (process.env.CLAUDE_API_KEY) {
     return res.json({
       loggedIn: true,
       authMethod: 'api_key',
       provider: 'opencode',
-      raw: 'ANTHROPIC_API_KEY set in environment',
+      raw: 'CLAUDE_API_KEY set in environment',
     });
   }
   try {
@@ -1565,7 +1576,16 @@ app.get('/api/health', async (req, res) => {
     uptime: process.uptime(),
     state: harness.state.toJSON(),
     sandboxes: sandboxStates,
+    scheduler: scheduler.getStatus(),
   });
+});
+
+app.post('/api/scheduler/trigger', async (req, res) => {
+  const { job, date } = req.body || {};
+  if (!job) return res.status(400).json({ error: 'job is required (daily_briefing or weekly_screeners)' });
+  const result = await scheduler.triggerJob(job, date || null);
+  if (result?.error) return res.status(400).json(result);
+  res.json(result);
 });
 
 // Serve static files (after API routes)
@@ -1597,9 +1617,13 @@ if (activeAccount) {
   console.log('  No active account configured — Go backend not started');
 }
 
+await scheduler.start();
+scheduler.runStartupChecks().catch(() => {});
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('\n  Shutting down...');
+  scheduler.stop();
   await harness.stop();
   await orchestrator.shutdown();
   await stopGoBackend();
@@ -1607,6 +1631,7 @@ process.on('SIGTERM', async () => {
 });
 process.on('SIGINT', async () => {
   console.log('\n  Shutting down...');
+  scheduler.stop();
   await harness.stop();
   await orchestrator.shutdown();
   await stopGoBackend();
