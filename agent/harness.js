@@ -113,7 +113,7 @@ Heartbeat control:
 // ── Check CLI auth ─────────────────────────────────────────────────
 export function checkCliAuth() {
   // API key in env takes precedence — OpenCode picks it up automatically
-  if (process.env.ANTHROPIC_API_KEY) return true;
+  if (process.env.CLAUDE_API_KEY) return true;
   try {
     const out = execSync('opencode auth list 2>&1', { timeout: 5000, encoding: 'utf-8' });
     // Look for Anthropic credential (oauth or env) in the output
@@ -267,7 +267,7 @@ export class AgentHarness {
 
     // Check CLI auth
     if (!this.checkCliAuthFn()) {
-      throw new Error('OpenCode not authenticated. Run "opencode auth login" or set ANTHROPIC_API_KEY in .env');
+      throw new Error('OpenCode not authenticated. Run "opencode auth login" or set CLAUDE_API_KEY in .env');
     }
 
     await this.reloadConfig({ resetSession: true, silent: true });
@@ -691,7 +691,7 @@ ${userBlock}`;
           ...process.env,
           // Map CLAUDE_API_KEY → ANTHROPIC_API_KEY so opencode uses the correct key
           // rather than whatever may be stored in its own auth file.
-          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY || '',
+          ANTHROPIC_API_KEY: process.env.CLAUDE_API_KEY || '',
           ...this.opencodeEnv,
           OPENPROPHET_SANDBOX_ID: this.sandboxId || '',
           OPENPROPHET_ACCOUNT_ID: this.state.activeAccountId || this.accountId || '',

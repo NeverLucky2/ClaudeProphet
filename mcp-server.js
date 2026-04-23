@@ -8,8 +8,12 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
+import { spawnSync, spawn as spawnBg } from 'child_process';
 import fs from 'fs/promises';
 import path from 'path';
+
+const PYTHON_BIN = process.platform === 'win32' ? 'python' : 'python3';
+const REPORTS_DIR = path.join(process.cwd(), 'data', 'reports');
 import { storeTrade, findSimilarTrades, getTradeStats, getEmbeddingCount } from './vectorDB.js';
 
 // Configuration
@@ -1045,6 +1049,63 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             sandboxId: { type: 'string', description: 'Sandbox ID (e.g., "sbx_6edbf348"). If not provided, uses current sandbox.' },
           },
           required: ['agentId'],
+        },
+      },
+
+      // ── Analysis Tools ─────────────────────────────────────────────
+      {
+        name: 'run_market_briefing',
+        description: 'Fetch market breadth and uptrend ratio data from TraderMonty CSV sources (no API key needed). Returns composite uptrend score 0-100, breadth index, and sector data. Takes ~20 seconds.',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'run_vcp_screener',
+        description: 'Screen S&P 500 for Minervini VCP breakout candidates using FMP API. Launches a background job (~2-3 min). Returns immediately with job status. Call wait(180) then read_latest_report("vcp") to retrieve results. Requires FMP_API_KEY env var.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            strict: { type: 'boolean', description: 'Strict mode: only Pre-breakout/Breakout execution states (default: false)' },
+          },
+        },
+      },
+      {
+        name: 'run_pead_screener',
+        description: 'Screen for Post-Earnings Announcement Drift candidates using FMP API. Launches a background job (~2 min). Returns immediately. Call wait(120) then read_latest_report("pead") to retrieve results. Requires FMP_API_KEY env var.',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'run_market_top_check',
+        description: "Run O'Neil distribution day count + Minervini leading stock deterioration + Monty defensive rotation. Returns market top probability 0-100. Synchronous, ~90 seconds. Requires FMP_API_KEY env var.",
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'run_ftd_check',
+        description: "Detect Follow-Through Day signals on S&P 500 and Nasdaq using O'Neil methodology. Synchronous, ~60 seconds. Requires FMP_API_KEY env var.",
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'run_economic_calendar',
+        description: 'Fetch upcoming economic events (FOMC, CPI, PPI, NFP, GDP) for the next 14 days via FMP API. Synchronous, ~15 seconds. Requires FMP_API_KEY env var.',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'run_earnings_calendar',
+        description: 'Fetch mid-cap+ earnings announcements for the current week via FMP API. Synchronous, ~15 seconds. Requires FMP_API_KEY env var.',
+        inputSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'read_latest_report',
+        description: "Read the most recently generated analysis report from data/reports/. Use after background screeners finish, or to load the daily briefing and weekly regime report at the start of each pre-market beat.",
+        inputSchema: {
+          type: 'object',
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['vcp', 'pead', 'market_top', 'ftd', 'daily_brief', 'weekly_regime', 'uptrend', 'scenario', 'review'],
+              description: 'Report type to read',
+            },
+          },
+          required: ['type'],
         },
       },
     ],
@@ -2200,6 +2261,198 @@ Worst Trade: ${stats.worst_result_pct.toFixed(1)}% ($${stats.worst_result_dollar
         return {
           content: [{ type: 'text', text: `Assigned agent "${agentId}" to sandbox "${targetSandbox}". The agent will take over on the next heartbeat.` }],
         };
+      }
+
+      // ── Analysis Tool Handlers ──────────────────────────────────────
+
+      case 'run_market_briefing': {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+
+        const breadthResult = spawnSync(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/breadth-chart-analyst/scripts/fetch_breadth_csv.py'),
+          '--json',
+        ], { timeout: 30000, encoding: 'utf-8', env: process.env });
+
+        const uptrendResult = spawnSync(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/uptrend-analyzer/scripts/uptrend_analyzer.py'),
+          '--output-dir', REPORTS_DIR,
+        ], { timeout: 90000, encoding: 'utf-8', env: process.env });
+
+        let uptrendData = null;
+        try {
+          const files = (await fs.readdir(REPORTS_DIR))
+            .filter(f => f.startsWith('uptrend_analysis_') && f.endsWith('.json'))
+            .sort().reverse();
+          if (files.length > 0) uptrendData = JSON.parse(await fs.readFile(path.join(REPORTS_DIR, files[0]), 'utf-8'));
+        } catch {}
+
+        let breadthData = null;
+        try { breadthData = JSON.parse(breadthResult.stdout || 'null'); } catch {}
+
+        const output = {
+          breadth_csv: breadthData || { error: breadthResult.stderr?.slice(0, 300) || 'no output' },
+          uptrend_analysis: uptrendData || { error: uptrendResult.stderr?.slice(0, 300) || 'no output file generated' },
+        };
+        return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] };
+      }
+
+      case 'run_vcp_screener': {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+        const fmpKey = process.env.FMP_API_KEY;
+        if (!fmpKey) return { content: [{ type: 'text', text: 'Error: FMP_API_KEY environment variable not set. Cannot run VCP screener.' }], isError: true };
+
+        const scriptArgs = [
+          path.join(process.cwd(), '.claude/skills/vcp-screener/scripts/screen_vcp.py'),
+          '--output-dir', REPORTS_DIR,
+        ];
+        if (args?.strict) scriptArgs.push('--strict');
+
+        const proc = spawnBg(PYTHON_BIN, scriptArgs, {
+          cwd: process.cwd(),
+          env: { ...process.env, FMP_API_KEY: fmpKey },
+          stdio: 'ignore',
+          detached: false,
+        });
+        const pid = proc.pid;
+        proc.unref();
+        return { content: [{ type: 'text', text: `VCP screener launched (PID: ${pid}). Expected completion: 2-3 minutes.\n\nResults will appear in data/reports/vcp_screener_*.json\n\nRecommended: call wait(180) then read_latest_report("vcp")` }] };
+      }
+
+      case 'run_pead_screener': {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+        const fmpKey = process.env.FMP_API_KEY;
+        if (!fmpKey) return { content: [{ type: 'text', text: 'Error: FMP_API_KEY environment variable not set. Cannot run PEAD screener.' }], isError: true };
+
+        const proc = spawnBg(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/pead-screener/scripts/screen_pead.py'),
+          '--output-dir', REPORTS_DIR,
+        ], {
+          cwd: process.cwd(),
+          env: { ...process.env, FMP_API_KEY: fmpKey },
+          stdio: 'ignore',
+          detached: false,
+        });
+        const pid = proc.pid;
+        proc.unref();
+        return { content: [{ type: 'text', text: `PEAD screener launched (PID: ${pid}). Expected completion: 1-2 minutes.\n\nResults will appear in data/reports/pead_screener_*.json\n\nRecommended: call wait(120) then read_latest_report("pead")` }] };
+      }
+
+      case 'run_market_top_check': {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+        const fmpKey = process.env.FMP_API_KEY;
+        if (!fmpKey) return { content: [{ type: 'text', text: 'Error: FMP_API_KEY environment variable not set.' }], isError: true };
+
+        const result = spawnSync(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/market-top-detector/scripts/market_top_detector.py'),
+          '--output-dir', REPORTS_DIR,
+        ], { timeout: 120000, encoding: 'utf-8', env: { ...process.env, FMP_API_KEY: fmpKey } });
+
+        if (result.error) return { content: [{ type: 'text', text: `Error: ${result.error.message}` }], isError: true };
+
+        let reportData = null;
+        try {
+          const files = (await fs.readdir(REPORTS_DIR))
+            .filter(f => f.startsWith('market_top_') && f.endsWith('.json'))
+            .sort().reverse();
+          if (files.length > 0) reportData = JSON.parse(await fs.readFile(path.join(REPORTS_DIR, files[0]), 'utf-8'));
+        } catch {}
+
+        const text = reportData ? JSON.stringify(reportData, null, 2) : (result.stdout || result.stderr || 'Completed with no output');
+        return { content: [{ type: 'text', text: text.slice(0, 8000) }] };
+      }
+
+      case 'run_ftd_check': {
+        await fs.mkdir(REPORTS_DIR, { recursive: true });
+        const fmpKey = process.env.FMP_API_KEY;
+        if (!fmpKey) return { content: [{ type: 'text', text: 'Error: FMP_API_KEY environment variable not set.' }], isError: true };
+
+        const result = spawnSync(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/ftd-detector/scripts/ftd_detector.py'),
+          '--output-dir', REPORTS_DIR,
+        ], { timeout: 90000, encoding: 'utf-8', env: { ...process.env, FMP_API_KEY: fmpKey } });
+
+        if (result.error) return { content: [{ type: 'text', text: `Error: ${result.error.message}` }], isError: true };
+
+        let reportData = null;
+        try {
+          const files = (await fs.readdir(REPORTS_DIR))
+            .filter(f => f.startsWith('ftd_detector_') && f.endsWith('.json'))
+            .sort().reverse();
+          if (files.length > 0) reportData = JSON.parse(await fs.readFile(path.join(REPORTS_DIR, files[0]), 'utf-8'));
+        } catch {}
+
+        const text = reportData ? JSON.stringify(reportData, null, 2) : (result.stdout || result.stderr || 'Completed with no output');
+        return { content: [{ type: 'text', text: text.slice(0, 8000) }] };
+      }
+
+      case 'run_economic_calendar': {
+        const fmpKey = process.env.FMP_API_KEY;
+        if (!fmpKey) return { content: [{ type: 'text', text: 'Error: FMP_API_KEY environment variable not set.' }], isError: true };
+
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+        const endDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+
+        const result = spawnSync(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/economic-calendar-fetcher/scripts/get_economic_calendar.py'),
+          '--from', today,
+          '--to', endDate,
+        ], { timeout: 30000, encoding: 'utf-8', env: { ...process.env, FMP_API_KEY: fmpKey } });
+
+        if (result.error) return { content: [{ type: 'text', text: `Error: ${result.error.message}` }], isError: true };
+        return { content: [{ type: 'text', text: result.stdout || result.stderr || 'No events found.' }] };
+      }
+
+      case 'run_earnings_calendar': {
+        const fmpKey = process.env.FMP_API_KEY;
+        if (!fmpKey) return { content: [{ type: 'text', text: 'Error: FMP_API_KEY environment variable not set.' }], isError: true };
+
+        const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const day = etNow.getDay();
+        const monday = new Date(etNow);
+        monday.setDate(etNow.getDate() - (day === 0 ? 6 : day - 1));
+        const friday = new Date(monday);
+        friday.setDate(monday.getDate() + 4);
+        const fmt = (d) => d.toLocaleDateString('en-CA');
+
+        const result = spawnSync(PYTHON_BIN, [
+          path.join(process.cwd(), '.claude/skills/earnings-calendar/scripts/fetch_earnings_fmp.py'),
+          fmt(monday),
+          fmt(friday),
+        ], { timeout: 30000, encoding: 'utf-8', env: { ...process.env, FMP_API_KEY: fmpKey } });
+
+        if (result.error) return { content: [{ type: 'text', text: `Error: ${result.error.message}` }], isError: true };
+        return { content: [{ type: 'text', text: result.stdout || result.stderr || 'No earnings found.' }] };
+      }
+
+      case 'read_latest_report': {
+        const { type: reportType } = args;
+        const prefixMap = {
+          vcp: 'vcp_screener_',
+          pead: 'pead_screener_',
+          market_top: 'market_top_',
+          ftd: 'ftd_detector_',
+          daily_brief: 'daily_brief_',
+          weekly_regime: 'weekly_regime_',
+          uptrend: 'uptrend_analysis_',
+          scenario: 'scenario_',
+          review: 'review_',
+        };
+        const prefix = prefixMap[reportType];
+        if (!prefix) return { content: [{ type: 'text', text: `Unknown report type: ${reportType}. Valid: ${Object.keys(prefixMap).join(', ')}` }], isError: true };
+
+        let files;
+        try {
+          const all = await fs.readdir(REPORTS_DIR);
+          files = all.filter(f => f.startsWith(prefix) && f.endsWith('.json')).sort().reverse();
+        } catch {
+          return { content: [{ type: 'text', text: 'data/reports/ not found. No reports generated yet.' }] };
+        }
+
+        if (files.length === 0) return { content: [{ type: 'text', text: `No ${reportType} reports found in data/reports/. Run the corresponding screener first.` }] };
+
+        const content = await fs.readFile(path.join(REPORTS_DIR, files[0]), 'utf-8');
+        const truncated = content.length > 8000 ? content.slice(0, 8000) + '\n... [truncated]' : content;
+        return { content: [{ type: 'text', text: `Report: ${files[0]}\n\n${truncated}` }] };
       }
 
       default:
