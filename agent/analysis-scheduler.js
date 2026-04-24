@@ -117,13 +117,19 @@ export class AnalysisScheduler extends EventEmitter {
   async runStartupChecks() {
     const isoDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     const todaySlug = isoDate.replace(/-/g, '');
+    const { hour, dayOfWeek } = this._getETInfo();
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
     let adaptNeeded = false;
 
-    // 1. Daily briefing (file-based)
+    // 1. Daily briefing (file-based) — skip if market has already closed (≥4 PM ET); will fire at 6 AM ET next weekday
     try { await fs.access(path.join(REPORTS_DIR, `daily_brief_${todaySlug}.json`)); }
     catch {
-      this._log('No daily briefing for today — triggering now...', 'info');
-      await this.triggerJob('daily_briefing').catch(() => {});
+      if (isWeekday && hour < 16) {
+        this._log('No daily briefing for today — triggering now...', 'info');
+        await this.triggerJob('daily_briefing').catch(() => {});
+      } else {
+        this._log('No daily briefing for today — skipping (market closed, will run at 6 AM ET next weekday).', 'info');
+      }
     }
 
     // 2. Scenario analysis (file-based)
@@ -232,7 +238,7 @@ export class AnalysisScheduler extends EventEmitter {
       allLogs.sort((a, b) => a.date.localeCompare(b.date));
 
       const latest = allLogs[allLogs.length - 1];
-      const significantLoss = latest.pnlPct <= -5.0;
+      const significantLoss = latest.pnlPct <= -4.0;
 
       // Count consecutive losing days from the end
       let consecutiveLossDays = 0;
