@@ -91,6 +91,7 @@ export class AnalysisScheduler extends EventEmitter {
       } else if (jobName === 'scenario_analysis') {
         this._lastScenarioDate = isoDate;
         await this._runScenarioAnalysis(isoDate);
+        await this._saveState();
       } else if (jobName === 'review_performance') {
         this._lastReviewWeek = this._getISOWeek(isoDate);
         await this._runSkill('review-performance', isoDate, null, 10 * 60 * 1000);
@@ -132,9 +133,8 @@ export class AnalysisScheduler extends EventEmitter {
       }
     }
 
-    // 2. Scenario analysis (file-based)
-    const reportFiles = await fs.readdir(REPORTS_DIR).catch(() => []);
-    if (!reportFiles.some(f => f.startsWith('scenario_') && f.includes(todaySlug))) {
+    // 2. Scenario analysis (state-based)
+    if (this._lastScenarioDate !== isoDate) {
       this._log('No scenario analysis for today — triggering now...', 'info');
       await this.triggerJob('scenario_analysis').catch(() => {});
     }
@@ -200,6 +200,7 @@ export class AnalysisScheduler extends EventEmitter {
       this._lastPostmortemDate = s.lastPostmortemDate || null;
       this._lastAdaptDate = s.lastAdaptDate || null;
       this._lastLossCheckDate = s.lastLossCheckDate || null;
+      this._lastScenarioDate = s.lastScenarioDate || null;
     } catch {}
   }
 
@@ -210,6 +211,7 @@ export class AnalysisScheduler extends EventEmitter {
         lastPostmortemDate: this._lastPostmortemDate,
         lastAdaptDate: this._lastAdaptDate,
         lastLossCheckDate: this._lastLossCheckDate,
+        lastScenarioDate: this._lastScenarioDate,
       }, null, 2), 'utf-8');
     } catch {}
   }
