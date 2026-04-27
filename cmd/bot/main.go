@@ -128,8 +128,25 @@ func main() {
 		logger.Info("Activity logging session started")
 	}
 
+	// Initialize penny stock signal pipeline
+	pennyUniverseService := services.NewPennyUniverseService(cfg.FMPAPIKey, nil)
+	pennyScreenerService := services.NewPennyScreenerService(cfg.AlpacaAPIKey, cfg.AlpacaSecretKey, pennyUniverseService)
+	secEdgarService := services.NewSECEdgarService(pennyUniverseService, nil)
+	socialSignalService := services.NewSocialSignalService(pennyUniverseService, nil)
+	pennyAggregator := services.NewPennySignalAggregator(pennyUniverseService, pennyScreenerService, secEdgarService, socialSignalService)
+	pennyController := controllers.NewPennyController(pennyAggregator)
+
+	// Start penny pipeline goroutines
+	go pennyUniverseService.Start(ctx)
+	go pennyScreenerService.Start(ctx)
+	go secEdgarService.Start(ctx)
+	go socialSignalService.Start(ctx)
+	go pennyAggregator.Start(ctx)
+
+	logger.Info("Penny stock signal pipeline started")
+
 	// Setup HTTP server
-	router := setupRouter(orderController, newsController, intelligenceController, positionController, activityController, economicFeedsController)
+	router := setupRouter(orderController, newsController, intelligenceController, positionController, activityController, economicFeedsController, pennyController)
 
 	// Start data cleanup routine
 	go startDataCleanup(ctx, storageService, cfg.DataRetentionDays, logger)
@@ -159,7 +176,7 @@ func main() {
 	}
 }
 
-func setupRouter(orderController *controllers.OrderController, newsController *controllers.NewsController, intelligenceController *controllers.IntelligenceController, positionController *controllers.PositionManagementController, activityController *controllers.ActivityController, economicFeedsController *controllers.EconomicFeedsController) *gin.Engine {
+func setupRouter(orderController *controllers.OrderController, newsController *controllers.NewsController, intelligenceController *controllers.IntelligenceController, positionController *controllers.PositionManagementController, activityController *controllers.ActivityController, economicFeedsController *controllers.EconomicFeedsController, pennyController *controllers.PennyController) *gin.Engine {
 	router := gin.Default()
 	router.SetTrustedProxies([]string{"127.0.0.1"})
 
@@ -244,6 +261,12 @@ func setupRouter(orderController *controllers.OrderController, newsController *c
 		api.POST("/activity/session/start", activityController.HandleStartSession)
 		api.POST("/activity/session/end", activityController.HandleEndSession)
 		api.POST("/activity/log", activityController.HandleLogActivity)
+
+		// Penny stock signal endpoints
+		api.GET("/penny/candidates", pennyController.HandleGetCandidates)
+		api.GET("/penny/signal/:ticker", pennyController.HandleGetSignalDetail)
+		api.GET("/penny/universe", pennyController.HandleGetUniverse)
+		api.POST("/penny/scan", pennyController.HandleScanNow)
 	}
 
 	// Serve dashboard

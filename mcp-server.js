@@ -1108,6 +1108,49 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ['type'],
         },
       },
+      {
+        name: 'get_penny_candidates',
+        description: 'Get penny stock candidates scored above a threshold by the real-time signal pipeline. Returns composite score (0–100), dominant signal type (technical/regulatory/social), and context. Use min_score=60 for tradeable signals.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            min_score: {
+              type: 'number',
+              description: 'Minimum composite score (0–100). Default: 60. Scores 60–79 → 2–3% position size; 80–100 → 5–7% position size.',
+            },
+          },
+        },
+      },
+      {
+        name: 'get_penny_signal_detail',
+        description: 'Get the full signal breakdown for a specific ticker: technical score, regulatory score, social score, dominant signal type, event descriptions, and last update time.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ticker: {
+              type: 'string',
+              description: 'Stock ticker symbol (e.g. ACMR, MFIN)',
+            },
+          },
+          required: ['ticker'],
+        },
+      },
+      {
+        name: 'get_penny_universe',
+        description: 'Get the current monitored penny stock universe: all symbols passing the $2–$10 price, $50M–$500M market cap, $300K+ ADV, exchange-listed filter.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
+      {
+        name: 'scan_penny_universe_now',
+        description: 'Trigger an out-of-cycle universe refresh. Use after market open to ensure the latest symbols are loaded. Returns {status: "refreshing"}.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+        },
+      },
     ],
   };
 });
@@ -2453,6 +2496,35 @@ Worst Trade: ${stats.worst_result_pct.toFixed(1)}% ($${stats.worst_result_dollar
         const content = await fs.readFile(path.join(REPORTS_DIR, files[0]), 'utf-8');
         const truncated = content.length > 8000 ? content.slice(0, 8000) + '\n... [truncated]' : content;
         return { content: [{ type: 'text', text: `Report: ${files[0]}\n\n${truncated}` }] };
+      }
+
+      case 'get_penny_candidates': {
+        const min_score = args?.min_score ?? 60;
+        const data = await callTradingBot(`/penny/candidates?min_score=${min_score}`);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+        };
+      }
+
+      case 'get_penny_signal_detail': {
+        const data = await callTradingBot(`/penny/signal/${encodeURIComponent(args.ticker)}`);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+        };
+      }
+
+      case 'get_penny_universe': {
+        const data = await callTradingBot('/penny/universe');
+        return {
+          content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+        };
+      }
+
+      case 'scan_penny_universe_now': {
+        const data = await callTradingBot('/penny/scan', 'POST');
+        return {
+          content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
+        };
       }
 
       default:

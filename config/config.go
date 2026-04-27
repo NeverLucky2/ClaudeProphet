@@ -12,6 +12,7 @@ type Config struct {
 	AlpacaBaseURL     string
 	AlpacaPaper       bool
 	ClaudeAPIKey      string
+	FMPAPIKey         string
 	DatabasePath      string
 	ServerPort        string
 	EnableLogging     bool
@@ -31,6 +32,7 @@ func Load() error {
 		AlpacaBaseURL:     getEnvOrDefault("ALPACA_BASE_URL", "https://paper-api.alpaca.markets"),
 		AlpacaPaper:       getEnvOrDefault("ALPACA_PAPER", "true") == "true",
 		ClaudeAPIKey:      os.Getenv("CLAUDE_API_KEY"),
+		FMPAPIKey:         os.Getenv("FMP_API_KEY"),
 		DatabasePath:      getEnvOrDefault("DATABASE_PATH", "./data/prophet_trader.db"),
 		ServerPort:        getEnvOrDefault("PORT", getEnvOrDefault("SERVER_PORT", "4534")),
 		EnableLogging:     getEnvOrDefault("ENABLE_LOGGING", "true") == "true",
