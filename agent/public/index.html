@@ -2245,7 +2245,9 @@ function renderSandboxesTab() {
       '</div>' +
       '<div class="config-card-actions" style="margin-bottom:12px">' +
         (running
-          ? '<button class="btn sm" onclick="stopSandbox(\'' + esc(sbx.id) + '\')">Stop</button>'
+          ? (paused
+            ? '<button class="btn sm primary" onclick="resumeSandbox(\'' + esc(sbx.id) + '\')">Resume</button><button class="btn sm danger" onclick="stopSandbox(\'' + esc(sbx.id) + '\')">Stop</button>'
+            : '<button class="btn sm" onclick="pauseSandbox(\'' + esc(sbx.id) + '\')">Pause</button><button class="btn sm danger" onclick="stopSandbox(\'' + esc(sbx.id) + '\')">Stop</button>')
           : '<button class="btn primary sm" onclick="startSandbox(\'' + esc(sbx.id) + '\')">Start</button>') +
         (!isActive ? ' <button class="btn sm" onclick="activateSandboxFromPage(\'' + esc(sbx.id) + '\')">Make Active</button>' : '') +
         ' <button class="btn sm" onclick="configureSandbox(\'' + esc(sbx.id) + '\')">Full Settings</button>' +
@@ -2353,7 +2355,7 @@ async function deleteSandboxFromPage(sandboxId) {
   const sbx = (config.sandboxes || {})[sandboxId];
   const name = sbx?.name || sandboxId;
   if (!confirm('Delete sandbox "' + name + '"? This cannot be undone.')) return;
-  const accountId = sbx?.account?.id || sandboxId.replace(/^sbx_/, '');
+  const accountId = sbx?.accountId || sandboxId.replace(/^sbx_/, '');
   const r = await fetch('/api/accounts/' + encodeURIComponent(accountId), { method: 'DELETE' });
   const d = await r.json();
   if (d.error) { showToast('Delete failed: ' + d.error, 'error'); return; }
