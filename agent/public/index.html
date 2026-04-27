@@ -2393,6 +2393,40 @@ async function submitSandboxCreate() {
   } catch (e) { showToast('Error: ' + e.message, 'error'); }
 }
 
+async function submitSandboxFromAccount() {
+  const name = document.getElementById('f-sfa-name')?.value?.trim() || '';
+  const accountId = document.getElementById('f-sfa-account')?.value || '';
+  const agentId = document.getElementById('f-sfa-agent')?.value || '';
+  const profileId = document.getElementById('f-sfa-profile')?.value || '';
+  if (!name || !accountId) { showToast('Name and account are required', 'error'); return; }
+  try {
+    const r = await fetch('/api/accounts/' + encodeURIComponent(accountId) + '/clone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    const d = await r.json();
+    if (d.error) { showToast('Error: ' + d.error, 'error'); return; }
+    const sandboxId = d.sandboxId;
+    if (sandboxId && agentId) {
+      await fetch('/api/sandboxes/' + encodeURIComponent(sandboxId) + '/agent', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeAgentId: agentId }),
+      });
+    }
+    if (sandboxId && profileId) {
+      await fetch('/api/heartbeat/apply-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sandboxId, profile: profileId }),
+      });
+    }
+    closeModal();
+    showToast('Sandbox created', 'success');
+  } catch (e) { showToast('Error: ' + e.message, 'error'); }
+}
+
 const sandboxTerminals = {}; // { sandboxId: { el, logs[] } }
 
 function ensureSandboxTerminal(sandboxId, label) {
@@ -3298,6 +3332,21 @@ function showModal(type, data) {
       + (agentOpts ? '<div class="form-group"><label>Assign Agent (optional)</label><select id="f-sbx-agent"><option value="">None</option>'+agentOpts+'</select></div>' : '')
       + (profileOpts ? '<div class="form-group"><label>Heartbeat Profile (optional)</label><select id="f-sbx-profile"><option value="">None</option>'+profileOpts+'</select></div>' : '')
       + '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitSandboxCreate()">Create Sandbox</button></div>';
+  }
+  else if(type === 'sandbox-from-account') {
+    const accounts = config.accounts || [];
+    const agentOpts = (config.agents || []).map(a => '<option value="'+esc(a.id)+'">'+esc(a.name)+'</option>').join('');
+    const profiles = Array.isArray(window._hbProfiles) ? window._hbProfiles : [];
+    const profileOpts = profiles.map(p => '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('');
+    const accountOpts = accounts.map(a =>
+      '<option value="'+esc(a.id)+'">' + esc(a.name) + ' (' + (a.paper !== false ? 'Paper' : 'Live') + ')</option>'
+    ).join('');
+    modal.innerHTML = '<h3>New Sandbox from Account</h3>'
+      + '<div class="form-group"><label>Sandbox Name</label><input type="text" id="f-sfa-name" placeholder="e.g. PennyProphet Paper"></div>'
+      + '<div class="form-group"><label>Account</label><select id="f-sfa-account"><option value="">-- select account --</option>'+accountOpts+'</select></div>'
+      + (agentOpts ? '<div class="form-group"><label>Assign Agent (optional)</label><select id="f-sfa-agent"><option value="">None</option>'+agentOpts+'</select></div>' : '')
+      + (profileOpts ? '<div class="form-group"><label>Heartbeat Profile (optional)</label><select id="f-sfa-profile"><option value="">None</option>'+profileOpts+'</select></div>' : '')
+      + '<div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitSandboxFromAccount()">Create Sandbox</button></div>';
   }
   else if(type === 'account-create') {
     modal.innerHTML = '<h3>Add Trading Account</h3><div class="form-group"><label>Account Name</label><input type="text" id="f-acc-name" placeholder="e.g. Paper Trading"></div><div class="form-row"><div class="form-group"><label>Public Key</label><input type="text" id="f-acc-pk" placeholder="AKXXXXXXXXXX"></div><div class="form-group"><label>Secret Key</label><input type="password" id="f-acc-sk" placeholder="Your secret key"></div></div><div class="form-group"><label>Base URL</label><input type="text" id="f-acc-url" placeholder="https://paper-api.alpaca.markets"><div class="form-hint">Leave blank for auto-detection based on paper/live selection</div></div><div class="form-group"><label><input type="checkbox" id="f-acc-paper" checked> Paper Trading</label></div><div class="modal-actions"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitAccount()">Add Account</button></div>';
