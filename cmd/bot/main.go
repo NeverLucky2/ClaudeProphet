@@ -114,6 +114,24 @@ func main() {
 	positionManager := services.NewPositionManager(tradingService, dataService, storageService)
 	positionController := controllers.NewPositionManagementController(positionManager)
 
+	// Create trade guard and wire into both controllers
+	tradeGuard := services.NewTradeGuard(
+		positionManager,
+		tradingService,
+		services.TradeGuardConfig{
+			PennyMaxCapitalPct:      cfg.PennyMaxCapitalPct,
+			PennyMaxPositionDollars: cfg.PennyMaxPositionDollars,
+		},
+	)
+	positionManager.SetGuard(tradeGuard)
+	orderController.SetGuard(tradeGuard)
+	guardController := controllers.NewGuardController(tradeGuard)
+
+	logger.WithFields(logrus.Fields{
+		"penny_max_capital_pct":      cfg.PennyMaxCapitalPct,
+		"penny_max_position_dollars": cfg.PennyMaxPositionDollars,
+	}).Info("Trade guard initialized")
+
 	// Create activity logger
 	activityLogDir := os.Getenv("ACTIVITY_LOG_DIR")
 	if activityLogDir == "" {
@@ -146,7 +164,7 @@ func main() {
 	logger.Info("Penny stock signal pipeline started")
 
 	// Setup HTTP server
-	router := setupRouter(orderController, newsController, intelligenceController, positionController, activityController, economicFeedsController, pennyController)
+	router := setupRouter(orderController, newsController, intelligenceController, positionController, activityController, economicFeedsController, pennyController, guardController)
 
 	// Start data cleanup routine
 	go startDataCleanup(ctx, storageService, cfg.DataRetentionDays, logger)
@@ -176,7 +194,7 @@ func main() {
 	}
 }
 
-func setupRouter(orderController *controllers.OrderController, newsController *controllers.NewsController, intelligenceController *controllers.IntelligenceController, positionController *controllers.PositionManagementController, activityController *controllers.ActivityController, economicFeedsController *controllers.EconomicFeedsController, pennyController *controllers.PennyController) *gin.Engine {
+func setupRouter(orderController *controllers.OrderController, newsController *controllers.NewsController, intelligenceController *controllers.IntelligenceController, positionController *controllers.PositionManagementController, activityController *controllers.ActivityController, economicFeedsController *controllers.EconomicFeedsController, pennyController *controllers.PennyController, guardController *controllers.GuardController) *gin.Engine {
 	router := gin.Default()
 	router.SetTrustedProxies([]string{"127.0.0.1"})
 
@@ -267,6 +285,9 @@ func setupRouter(orderController *controllers.OrderController, newsController *c
 		api.GET("/penny/signal/:ticker", pennyController.HandleGetSignalDetail)
 		api.GET("/penny/universe", pennyController.HandleGetUniverse)
 		api.POST("/penny/scan", pennyController.HandleScanNow)
+
+		// Trade guard endpoint
+		api.GET("/guard/status", guardController.HandleGetStatus)
 	}
 
 	// Serve dashboard

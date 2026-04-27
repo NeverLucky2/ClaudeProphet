@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -18,6 +19,10 @@ type Config struct {
 	EnableLogging     bool
 	LogLevel          string
 	DataRetentionDays int
+
+	// Trade guard limits
+	PennyMaxCapitalPct      float64 // fraction of portfolio, e.g. 0.20
+	PennyMaxPositionDollars float64 // max dollars per single penny trade, e.g. 500
 }
 
 var AppConfig *Config
@@ -38,6 +43,9 @@ func Load() error {
 		EnableLogging:     getEnvOrDefault("ENABLE_LOGGING", "true") == "true",
 		LogLevel:          getEnvOrDefault("LOG_LEVEL", "info"),
 		DataRetentionDays: 90,
+
+		PennyMaxCapitalPct:      parseFloat(getEnvOrDefault("PENNY_MAX_CAPITAL_PCT", "0.20")),
+		PennyMaxPositionDollars: parseFloat(getEnvOrDefault("PENNY_MAX_POSITION_DOLLARS", "500")),
 	}
 
 	return nil
@@ -48,4 +56,9 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func parseFloat(s string) float64 {
+	v, _ := strconv.ParseFloat(s, 64)
+	return v
 }
