@@ -34,8 +34,8 @@ Do NOT enter a position if `get_penny_candidates` returns no results.
 
 | Composite Score | Position Size | Hard Cap |
 |---|---|---|
-| 80–100 | 5–7% of portfolio | 8% max |
-| 60–79 | 2–3% of portfolio | 8% max |
+| ≥ 80 (score inclusive) | 5–7% of portfolio | 8% max |
+| 60–79 (score inclusive) | 2–3% of portfolio | 8% max |
 | < 60 | No trade (watchlist only) | — |
 
 **Rule:** Maximum 8% of portfolio in any single penny position, regardless of score.
@@ -60,7 +60,8 @@ Read `dominant_signal` from `get_penny_signal_detail` to determine the exit rule
 - **Hold mode:** Day-trade only. Close by market close. No overnight holds.
 - **Stop:** −8% from entry
 - **Target:** +15% (close 50%) then +20% (close remaining)
-- **Note:** Social momentum windows are 10–20 minutes. Act fast or skip.
+- **Time limit:** If the position is still open 20 minutes after entry, close at market regardless of target — social momentum windows are 10–20 minutes.
+- **Note:** Act fast or skip. If entry is less than 30 minutes before market close, do not enter.
 
 ### `dominant_signal = "regulatory"` (8-K, PR wire)
 - **Hold mode:** Up to 3 calendar days
@@ -79,6 +80,8 @@ Read `dominant_signal` from `get_penny_signal_detail` to determine the exit rule
 ## Daily Circuit Breaker
 
 **Rule:** If portfolio P&L ≤ −5% intraday, close all penny positions and cease new entries for the rest of the session.
+
+The circuit breaker resets at the start of each new trading session. Use `get_datetime` to detect a new session (new calendar date with market open status).
 
 Log the circuit breaker trigger via `log_decision` with type `CIRCUIT_BREAKER`.
 
