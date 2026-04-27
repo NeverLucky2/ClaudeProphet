@@ -91,6 +91,7 @@ export class AnalysisScheduler extends EventEmitter {
       } else if (jobName === 'scenario_analysis') {
         this._lastScenarioDate = isoDate;
         await this._runScenarioAnalysis(isoDate);
+        await this._saveState();
       } else if (jobName === 'review_performance') {
         this._lastReviewWeek = this._getISOWeek(isoDate);
         await this._runSkill('review-performance', isoDate, null, 10 * 60 * 1000);
@@ -117,18 +118,23 @@ export class AnalysisScheduler extends EventEmitter {
   async runStartupChecks() {
     const isoDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     const todaySlug = isoDate.replace(/-/g, '');
+    const { hour, dayOfWeek } = this._getETInfo();
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
     let adaptNeeded = false;
 
-    // 1. Daily briefing (file-based)
+    // 1. Daily briefing (file-based) — skip if market has already closed (≥4 PM ET); will fire at 6 AM ET next weekday
     try { await fs.access(path.join(REPORTS_DIR, `daily_brief_${todaySlug}.json`)); }
     catch {
-      this._log('No daily briefing for today — triggering now...', 'info');
-      await this.triggerJob('daily_briefing').catch(() => {});
+      if (isWeekday && hour < 16) {
+        this._log('No daily briefing for today — triggering now...', 'info');
+        await this.triggerJob('daily_briefing').catch(() => {});
+      } else {
+        this._log('No daily briefing for today — skipping (market closed, will run at 6 AM ET next weekday).', 'info');
+      }
     }
 
-    // 2. Scenario analysis (file-based)
-    const reportFiles = await fs.readdir(REPORTS_DIR).catch(() => []);
-    if (!reportFiles.some(f => f.startsWith('scenario_') && f.includes(todaySlug))) {
+    // 2. Scenario analysis (state-based)
+    if (this._lastScenarioDate !== isoDate) {
       this._log('No scenario analysis for today — triggering now...', 'info');
       await this.triggerJob('scenario_analysis').catch(() => {});
     }
@@ -194,6 +200,7 @@ export class AnalysisScheduler extends EventEmitter {
       this._lastPostmortemDate = s.lastPostmortemDate || null;
       this._lastAdaptDate = s.lastAdaptDate || null;
       this._lastLossCheckDate = s.lastLossCheckDate || null;
+      this._lastScenarioDate = s.lastScenarioDate || null;
     } catch {}
   }
 
@@ -204,6 +211,7 @@ export class AnalysisScheduler extends EventEmitter {
         lastPostmortemDate: this._lastPostmortemDate,
         lastAdaptDate: this._lastAdaptDate,
         lastLossCheckDate: this._lastLossCheckDate,
+        lastScenarioDate: this._lastScenarioDate,
       }, null, 2), 'utf-8');
     } catch {}
   }
@@ -232,7 +240,7 @@ export class AnalysisScheduler extends EventEmitter {
       allLogs.sort((a, b) => a.date.localeCompare(b.date));
 
       const latest = allLogs[allLogs.length - 1];
-      const significantLoss = latest.pnlPct <= -5.0;
+      const significantLoss = latest.pnlPct <= -4.0;
 
       // Count consecutive losing days from the end
       let consecutiveLossDays = 0;

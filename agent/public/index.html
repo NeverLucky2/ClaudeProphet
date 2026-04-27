@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -100,11 +100,11 @@
         #2e7d32 0%,
         #e65100 14%,
         #ff8f00 28%,
-        #ffd54f 44%,
-        #558b2f 58%,
-        #1b5e20 72%,
-        #6a1b9a 86%,
-        #2e7d32 100%);
+        #ffd54f 42%,
+        #6abb31 58%,
+        #33ac3b 72%,
+        #bd4521 86%,
+        #de8219 100%);
       background-size: 300% 300%;
       animation: themeBgDrift 32s ease infinite;
     }
@@ -115,14 +115,14 @@
       --paper:        rgba(242, 252, 255, 0.80);
       --paper-dark:   rgba(212, 244, 252, 0.80);
       --paper-darker: rgba(178, 232, 248, 0.78);
-      --ink:          #002f3e;
-      --ink-light:    #004a5e;
+      --ink:          #00171e;
+      --ink-light:    #003a49;
       --ink-muted:    #1a6680;
       --ink-faint:    #1a5272;
       --accent:       #00838f;
       --accent-dark:  #006064;
       --accent-light: #4dd0e1;
-      --success:      #00695c;
+      --success:      #034139;
       --success-bg:   rgba(0, 105, 92, 0.15);
       --error:        #b71c1c;
       --error-bg:     rgba(183, 28, 28, 0.12);
@@ -149,14 +149,62 @@
         #ff8a65 13%,
         #ffe082 27%,
         #ffd54f 42%,
-        #80deea 58%,
-        #00838f 71%,
-        #4dd0e1 84%,
+        #8ceefb 58%,
+        #1bccdc 71%,
+        #66e0f0 84%,
         #ffd54f 96%);
       background-size: 300% 300%;
       animation: themeBgDrift 32s ease infinite;
     }
     [data-theme="sunrise-beach"] body::before { opacity: 0; }
+
+    /* ── Sunset Tropical Beach Theme ─────────────────────────── */
+    [data-theme="sunset-tropical-beach"] {
+      --paper:        rgba(255, 248, 225, 0.82);
+      --paper-dark:   rgba(255, 235, 180, 0.82);
+      --paper-darker: rgba(248, 220, 150, 0.80);
+      --ink:          #00151d;
+      --ink-light:    #3d1500;
+      --ink-muted:    #006020;
+      --ink-faint:    #c3795c;
+      --accent:       #000f11;
+      --accent-dark:  #68bec8;
+      --accent-light: #52d9ea;
+      --success:      #000000;
+      --success-bg:   rgba(46, 125, 50, 0.18);
+      --error:        #c62828;
+      --error-bg:     rgba(198, 40, 40, 0.12);
+      --warning:      #e65100;
+      --warning-bg:   rgba(230, 81, 0, 0.16);
+      --rule:         rgba(180, 100, 40, 0.45);
+      --rule-light:   rgba(220, 150, 80, 0.35);
+      --code-bg:      rgba(255, 235, 180, 0.70);
+      --bg-dark:      rgba(255, 235, 180, 0.76);
+      --bg-darker:    rgba(248, 220, 150, 0.78);
+      --bg-panel:     rgba(255, 248, 225, 0.82);
+      --border:       rgba(180, 100, 40, 0.45);
+      --text:         #1a0800;
+      /* Warm golden sunset light refracting through tropical sea glass */
+      --glass-tint:      rgba(255, 160, 50, 0.24);
+      --glass-edge:      rgba(0, 140, 160, 0.65);
+      --glass-glow:      rgba(230, 81, 0, 0.18);
+      --glass-highlight: rgba(255, 240, 200, 0.68);
+      --glass-deep:      rgba(0, 188, 212, 0.32);
+    }
+    [data-theme="sunset-tropical-beach"] body {
+      background: linear-gradient(158deg,
+        #d34216 0%,
+        #b55b16 14%,
+        #bc9c27 28%,
+        #cb3063 42%,
+        #3878c2 56%,
+        #44b4c3 70%,
+        #36b23c 84%,
+        #da4517 100%);
+      background-size: 300% 300%;
+      animation: themeBgDrift 32s ease infinite;
+    }
+    [data-theme="sunset-tropical-beach"] body::before { opacity: 0; }
 
     @keyframes themeBgDrift {
       0%   { background-position: 45% 50%; }
@@ -363,6 +411,169 @@
       border-color: var(--glass-edge) !important;
       box-shadow: 0 2px 8px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
     }
+
+    /* ── Sunset Tropical Beach Glass Morphism ────────────────── */
+    [data-theme="sunset-tropical-beach"] .panel,
+    [data-theme="sunset-tropical-beach"] .terminal-panel { background: transparent !important; }
+
+    [data-theme="sunset-tropical-beach"] .topbar {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(22px) saturate(180%);
+      -webkit-backdrop-filter: blur(22px) saturate(180%);
+      border-bottom-color: var(--glass-edge) !important;
+      box-shadow: 0 1px 0 var(--glass-highlight), 0 6px 28px var(--glass-glow);
+    }
+    [data-theme="sunset-tropical-beach"] .tabs {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(18px) saturate(172%);
+      -webkit-backdrop-filter: blur(18px) saturate(172%);
+      border-bottom-color: var(--glass-edge) !important;
+      box-shadow: inset 0 -1px 0 var(--glass-edge);
+    }
+    [data-theme="sunset-tropical-beach"] .tab.active {
+      background: var(--glass-deep) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 6px 6px 0 0;
+    }
+    [data-theme="sunset-tropical-beach"] .sandbox-tabs {
+      background: rgba(0,0,0,0.08) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    [data-theme="sunset-tropical-beach"] .sandbox-tab {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(10px) saturate(155%);
+      -webkit-backdrop-filter: blur(10px) saturate(155%);
+    }
+    [data-theme="sunset-tropical-beach"] .sandbox-tab.active {
+      background: var(--glass-deep) !important;
+      box-shadow: 0 2px 14px var(--glass-glow);
+    }
+    [data-theme="sunset-tropical-beach"] .sandbox-page-picker {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(14px) saturate(162%);
+      -webkit-backdrop-filter: blur(14px) saturate(162%);
+      border-color: var(--glass-edge) !important;
+    }
+    [data-theme="sunset-tropical-beach"] .sandbox-page-picker .spick.active {
+      background: var(--glass-deep) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 1px 8px var(--glass-glow);
+    }
+    [data-theme="sunset-tropical-beach"] .sidebar {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(18px) saturate(168%);
+      -webkit-backdrop-filter: blur(18px) saturate(168%);
+      border-left-color: var(--glass-edge) !important;
+      box-shadow: -6px 0 28px var(--glass-glow);
+    }
+    [data-theme="sunset-tropical-beach"] .footer {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(18px) saturate(168%);
+      -webkit-backdrop-filter: blur(18px) saturate(168%);
+      border-top-color: var(--glass-edge) !important;
+      box-shadow: 0 -1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-tropical-beach"] .terminal {
+      background: rgba(0,0,0,0.10) !important;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    [data-theme="sunset-tropical-beach"] .terminal-search-bar,
+    [data-theme="sunset-tropical-beach"] .chat-input-bar {
+      background: var(--glass-tint) !important;
+      backdrop-filter: blur(18px) saturate(165%);
+      -webkit-backdrop-filter: blur(18px) saturate(165%);
+      border-color: var(--glass-edge) !important;
+    }
+    [data-theme="sunset-tropical-beach"] .terminal-search-bar input,
+    [data-theme="sunset-tropical-beach"] .chat-input-bar input {
+      background: var(--glass-deep) !important;
+      border-color: var(--glass-edge) !important;
+    }
+    [data-theme="sunset-tropical-beach"] .card,
+    [data-theme="sunset-tropical-beach"] .config-card,
+    [data-theme="sunset-tropical-beach"] .trade-card,
+    [data-theme="sunset-tropical-beach"] .hb-bar {
+      background: rgba(255,255,255,0.36) !important;
+      backdrop-filter: blur(14px) saturate(162%);
+      -webkit-backdrop-filter: blur(14px) saturate(162%);
+      border-color: var(--glass-edge) !important;
+      box-shadow: 0 2px 14px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-tropical-beach"] .card:hover,
+    [data-theme="sunset-tropical-beach"] .config-card:hover,
+    [data-theme="sunset-tropical-beach"] .trade-card:hover {
+      background: rgba(255,255,255,0.52) !important;
+      box-shadow: 0 4px 22px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-tropical-beach"] .btn {
+      background: rgba(255,255,255,0.32) !important;
+      backdrop-filter: blur(10px) saturate(155%);
+      -webkit-backdrop-filter: blur(10px) saturate(155%);
+      border-color: var(--glass-edge) !important;
+      box-shadow: 0 2px 8px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-tropical-beach"] .btn:hover {
+      background: rgba(255,255,255,0.52) !important;
+      box-shadow: 0 4px 16px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-tropical-beach"] .btn.primary {
+      background: var(--accent) !important;
+      border-color: transparent !important;
+      backdrop-filter: blur(10px) saturate(150%);
+      -webkit-backdrop-filter: blur(10px) saturate(150%);
+      box-shadow: 0 3px 14px var(--glass-glow), inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    [data-theme="sunset-tropical-beach"] .btn.primary:hover {
+      background: var(--accent-dark) !important;
+      box-shadow: 0 5px 18px var(--glass-glow), inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    [data-theme="sunset-tropical-beach"] input[type="text"],
+    [data-theme="sunset-tropical-beach"] input[type="number"],
+    [data-theme="sunset-tropical-beach"] input[type="password"],
+    [data-theme="sunset-tropical-beach"] select,
+    [data-theme="sunset-tropical-beach"] textarea {
+      background: rgba(255,255,255,0.36) !important;
+      backdrop-filter: blur(10px) saturate(155%);
+      -webkit-backdrop-filter: blur(10px) saturate(155%);
+      border-color: var(--glass-edge) !important;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.06);
+    }
+    [data-theme="sunset-tropical-beach"] input:focus,
+    [data-theme="sunset-tropical-beach"] select:focus,
+    [data-theme="sunset-tropical-beach"] textarea:focus {
+      background: rgba(255,255,255,0.55) !important;
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px rgba(0,131,143,0.22) !important;
+    }
+    [data-theme="sunset-tropical-beach"] .modal-overlay {
+      background: rgba(0,0,0,0.28) !important;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    [data-theme="sunset-tropical-beach"] .modal {
+      background: rgba(255,255,255,0.48) !important;
+      backdrop-filter: blur(28px) saturate(182%);
+      -webkit-backdrop-filter: blur(28px) saturate(182%);
+      border-color: var(--glass-edge) !important;
+      box-shadow: 0 10px 48px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-tropical-beach"] #theme-toggle {
+      background: rgba(255,255,255,0.30) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-color: var(--glass-edge) !important;
+      box-shadow: 0 2px 8px var(--glass-glow), inset 0 1px 0 var(--glass-highlight);
+    }
+    [data-theme="sunset-forest"] .logo span { color: #1a0600; }
+    [data-theme="sunset-forest"] .log-entry.info { color: #2d0f00; }
+    [data-theme="sunset-forest"] .log-entry.success { color: #2d0f00; }
+    [data-theme="sunset-tropical-beach"] .log-entry.info { color: #c8ffe8; }
+    [data-theme="sunset-tropical-beach"] .log-entry.success { color: #c8ffe8; }
+    [data-theme="sunset-tropical-beach"] .log-entry .time { color: #2d1200; }
 
     /* Toast notifications */
     .toast-container { position: fixed; top: 60px; right: 16px; z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
@@ -1395,19 +1606,18 @@ function showToast(message, type) {
   setTimeout(function() { toast.remove(); }, 5000);
 }
 
-// Theme cycling: sunset-forest → sunrise-beach → dark → light → ...
-var _THEMES = ['sunset-forest', 'sunrise-beach', 'dark', 'light'];
-var _THEME_ICONS = { 'sunset-forest': '🌲', 'sunrise-beach': '🌊', 'dark': '\u263D', 'light': '\u2600' };
+// Theme cycling: sunset-forest → sunrise-beach → sunset-tropical-beach → dark → ...
+var _THEMES = ['sunset-forest', 'sunrise-beach', 'sunset-tropical-beach', 'dark'];
+var _THEME_ICONS = { 'sunset-forest': '🌲', 'sunrise-beach': '🌊', 'sunset-tropical-beach': '🌅', 'dark': '\u263D' };
 var _THEME_TITLES = {
-  'sunset-forest':  'Sunset Forest — click for Sunrise Beach',
-  'sunrise-beach':  'Sunrise Beach — click for Dark',
-  'dark':           'Dark — click for Light',
-  'light':          'Light — click for Sunset Forest'
+  'sunset-forest':         'Sunset Forest — click for Sunrise Beach',
+  'sunrise-beach':         'Sunrise Beach — click for Sunset Tropical Beach',
+  'sunset-tropical-beach': 'Sunset Tropical Beach — click for Dark',
+  'dark':                  'Dark — click for Sunset Forest'
 };
 function _applyTheme(theme) {
   var html = document.documentElement;
-  if (theme === 'light') { html.removeAttribute('data-theme'); }
-  else { html.setAttribute('data-theme', theme); }
+  html.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
   var btn = document.getElementById('theme-toggle');
   if (btn) {
@@ -1416,7 +1626,7 @@ function _applyTheme(theme) {
   }
 }
 function toggleDarkMode() {
-  var current = localStorage.getItem('theme') || 'light';
+  var current = localStorage.getItem('theme') || 'sunset-forest';
   var idx = _THEMES.indexOf(current);
   _applyTheme(_THEMES[(idx + 1) % _THEMES.length]);
 }
