@@ -186,7 +186,7 @@ func (s *SECEdgarService) pollGlobeNewswire(tickers map[string]bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, item := range items {
-		combined := item.Title + " " + item.Description
+		combined := strings.ToUpper(item.Title + " " + item.Description)
 		for ticker := range tickers {
 			if strings.Contains(combined, ticker) {
 				desc := fmt.Sprintf("PR wire mention %s", now.Format("15:04 ET"))
@@ -196,7 +196,9 @@ func (s *SECEdgarService) pollGlobeNewswire(tickers map[string]bool) {
 	}
 }
 
-// upsertEntry keeps the highest-score entry per ticker. Caller must hold mu.Lock.
+// upsertEntry keeps the highest-score entry per ticker.
+// On equal scores, the existing entry is kept (preserving its earlier DetectedAt for decay purposes).
+// Caller must hold mu.Lock.
 func (s *SECEdgarService) upsertEntry(ticker string, base float64, now time.Time, desc string) {
 	existing, ok := s.entries[ticker]
 	if !ok || base > existing.BaseScore {
@@ -211,7 +213,8 @@ func extractTickerFromTitle(title string, tickers map[string]bool) string {
 	for ticker := range tickers {
 		if strings.Contains(upper, " "+ticker+" ") ||
 			strings.Contains(upper, "("+ticker+")") ||
-			strings.HasSuffix(upper, " "+ticker) {
+			strings.HasSuffix(upper, " "+ticker) ||
+			strings.HasPrefix(upper, ticker+" ") {
 			return ticker
 		}
 	}

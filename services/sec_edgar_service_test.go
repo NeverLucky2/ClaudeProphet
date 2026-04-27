@@ -19,6 +19,7 @@ func TestExtractTickerFromTitle(t *testing.T) {
 		{"8-K - ACME CORP (Issuer)", "ACME"},
 		{"8-K - BORING INC (Issuer)", ""},
 		{"8-K - (FOO) Corp", "FOO"},
+		{"ACME CORP files 8-K", "ACME"},
 	}
 	for _, tc := range tests {
 		got := extractTickerFromTitle(tc.title, tickers)
@@ -89,7 +90,7 @@ func TestSECEdgarService_FetchRSS_NonOK(t *testing.T) {
 	}
 }
 
-func TestSECEdgarService_PollGlobeNewswire_FindsTicker(t *testing.T) {
+func TestSECEdgarService_FetchRSS_ParsesTwoItems(t *testing.T) {
 	rssBody := `<?xml version="1.0"?>
 <rss version="2.0">
   <channel>
