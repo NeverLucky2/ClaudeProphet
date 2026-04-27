@@ -44,19 +44,6 @@ type GeminiResponse struct {
 	} `json:"candidates"`
 }
 
-// CleanedNews represents a token-efficient news summary
-type CleanedNews struct {
-	GeneratedAt      time.Time         `json:"generated_at"`
-	SourceCount      int               `json:"source_count"`
-	ArticleCount     int               `json:"article_count"`
-	MarketSentiment  string            `json:"market_sentiment"`
-	KeyThemes        []string          `json:"key_themes"`
-	StockMentions    map[string]string `json:"stock_mentions"`
-	ActionableItems  []string          `json:"actionable_items"`
-	ExecutiveSummary string            `json:"executive_summary"`
-	FullAnalysis     string            `json:"full_analysis"`
-}
-
 // NewGeminiService creates a new Gemini service
 func NewGeminiService(apiKey string) *GeminiService {
 	if apiKey == "" {
@@ -215,14 +202,4 @@ func min(a, b int) int {
 		return a
 	}
 	return b
-}
-
-func countUniqueSources(items []NewsItem) int {
-	sources := make(map[string]bool)
-	for _, item := range items {
-		if item.Source != "" {
-			sources[item.Source] = true
-		}
-	}
-	return len(sources)
 }
