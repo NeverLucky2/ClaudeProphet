@@ -2193,6 +2193,14 @@ function renderAll() {
 function renderSandboxesTab() {
   const container = document.getElementById('sandboxes-tab-list');
   if (!container) return;
+
+  const btnFromAccount = document.getElementById('btn-from-account');
+  if (btnFromAccount) {
+    const hasAccounts = (config.accounts || []).length > 0;
+    btnFromAccount.disabled = !hasAccounts;
+    btnFromAccount.title = hasAccounts ? '' : 'Add an account first in the Accounts tab';
+  }
+
   const sandboxes = getSandboxEntries();
   if (!sandboxes.length) {
     container.innerHTML = '<div class="no-data">No sandboxes yet. Click "New Sandbox" to create one.</div>';
@@ -2276,13 +2284,6 @@ function renderSandboxesTab() {
       '</div>' +
     '</div>';
   }).join('');
-
-  const btnFromAccount = document.getElementById('btn-from-account');
-  if (btnFromAccount) {
-    const hasAccounts = (config.accounts || []).length > 0;
-    btnFromAccount.disabled = !hasAccounts;
-    btnFromAccount.title = hasAccounts ? '' : 'Add an account first in the Accounts tab';
-  }
 }
 
 function toggleSbxHb(sandboxId) {
