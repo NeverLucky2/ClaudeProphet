@@ -2507,7 +2507,7 @@ Worst Trade: ${stats.worst_result_pct.toFixed(1)}% ($${stats.worst_result_dollar
       }
 
       case 'get_penny_signal_detail': {
-        const data = await callTradingBot(`/penny/signal/${args.ticker}`);
+        const data = await callTradingBot(`/penny/signal/${encodeURIComponent(args.ticker)}`);
         return {
           content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
         };
