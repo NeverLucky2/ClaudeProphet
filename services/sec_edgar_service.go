@@ -90,6 +90,21 @@ type atomEntry struct {
 	Summary string `xml:"summary"`
 }
 
+// rssFeed is a minimal RSS 2.0 feed parser.
+type rssFeed struct {
+	XMLName xml.Name   `xml:"rss"`
+	Channel rssChannel `xml:"channel"`
+}
+
+type rssChannel struct {
+	Items []rssItem `xml:"item"`
+}
+
+type rssItem struct {
+	Title       string `xml:"title"`
+	Description string `xml:"description"`
+}
+
 func (s *SECEdgarService) fetchAtom(url string) ([]atomEntry, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -115,6 +130,31 @@ func (s *SECEdgarService) fetchAtom(url string) ([]atomEntry, error) {
 	return feed.Entries, nil
 }
 
+func (s *SECEdgarService) fetchRSS(url string) ([]rssItem, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "ProphetBot/1.0 (contact: trading@example.com)")
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var feed rssFeed
+	if err := xml.Unmarshal(body, &feed); err != nil {
+		return nil, fmt.Errorf("rss parse: %w", err)
+	}
+	return feed.Channel.Items, nil
+}
+
 func (s *SECEdgarService) pollEdgar(tickers map[string]bool) {
 	const edgarURL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&dateb=&owner=include&count=40&search_text=&output=atom"
 	entries, err := s.fetchAtom(edgarURL)
@@ -137,7 +177,7 @@ func (s *SECEdgarService) pollEdgar(tickers map[string]bool) {
 
 func (s *SECEdgarService) pollGlobeNewswire(tickers map[string]bool) {
 	const gnwURL = "https://www.globenewswire.com/RssFeed/country/US"
-	entries, err := s.fetchAtom(gnwURL)
+	items, err := s.fetchRSS(gnwURL)
 	if err != nil {
 		s.logger.WithError(err).Warn("SECEdgarService: GlobeNewswire poll failed")
 		return
@@ -145,8 +185,8 @@ func (s *SECEdgarService) pollGlobeNewswire(tickers map[string]bool) {
 	now := time.Now()
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for _, entry := range entries {
-		combined := entry.Title + " " + entry.Summary
+	for _, item := range items {
+		combined := item.Title + " " + item.Description
 		for ticker := range tickers {
 			if strings.Contains(combined, ticker) {
 				desc := fmt.Sprintf("PR wire mention %s", now.Format("15:04 ET"))
