@@ -1183,6 +1183,24 @@ app.post('/api/accounts/:id/activate', async (req, res) => {
   } catch (err) { res.status(400).json({ error: err.message }); }
 });
 
+app.post('/api/accounts/:id/clone', async (req, res) => {
+  try {
+    const source = getAccountById(req.params.id);
+    if (!source) return res.status(404).json({ error: 'Account not found' });
+    const { name } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'Name is required' });
+    const account = await addAccount({
+      name: name.trim(),
+      publicKey: source.publicKey,
+      secretKey: source.secretKey,
+      baseUrl: source.baseUrl,
+      paper: source.paper,
+    });
+    broadcast('config', safeConfig());
+    res.json({ ok: true, sandboxId: `sbx_${account.id}`, account: { ...account, secretKey: '****' + account.secretKey.slice(-4) } });
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
 // Agents
 app.get('/api/agents', (req, res) => {
   const config = getConfig();
