@@ -27,6 +27,7 @@ type fmpScreenerItem struct {
 type PennyUniverseService struct {
 	httpClient *http.Client
 	fmpAPIKey  string
+	fmpBaseURL string
 	mu         sync.RWMutex
 	universe   []UniverseSymbol
 	logger     *logrus.Logger
@@ -42,6 +43,7 @@ func NewPennyUniverseService(fmpAPIKey string, httpClient *http.Client) *PennyUn
 	return &PennyUniverseService{
 		httpClient: httpClient,
 		fmpAPIKey:  fmpAPIKey,
+		fmpBaseURL: "https://financialmodelingprep.com",
 		logger:     logger,
 	}
 }
@@ -83,7 +85,8 @@ func (s *PennyUniverseService) GetTickers() []string {
 
 func (s *PennyUniverseService) refresh() {
 	url := fmt.Sprintf(
-		"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=50000000&marketCapLowerThan=500000000&priceMoreThan=2&priceLowerThan=10&exchange=NASDAQ,NYSE,AMEX&country=US&limit=500&apikey=%s",
+		"%s/api/v3/stock-screener?marketCapMoreThan=50000000&marketCapLowerThan=500000000&priceMoreThan=2&priceLowerThan=10&exchange=NASDAQ,NYSE,AMEX&country=US&limit=500&apikey=%s",
+		s.fmpBaseURL,
 		s.fmpAPIKey,
 	)
 	resp, err := s.httpClient.Get(url)
@@ -92,6 +95,10 @@ func (s *PennyUniverseService) refresh() {
 		return
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		s.logger.WithField("status", resp.StatusCode).Warn("PennyUniverseService: FMP returned non-200")
+		return
+	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		s.logger.WithError(err).Warn("PennyUniverseService: failed to read FMP response")
@@ -116,7 +123,7 @@ var allowedExchanges = map[string]bool{
 }
 
 func (s *PennyUniverseService) filter(items []fmpScreenerItem) []UniverseSymbol {
-	var out []UniverseSymbol
+	out := make([]UniverseSymbol, 0)
 	for _, item := range items {
 		if !allowedExchanges[item.ExchangeShortName] {
 			continue
@@ -127,7 +134,7 @@ func (s *PennyUniverseService) filter(items []fmpScreenerItem) []UniverseSymbol 
 		if item.MarketCap < 50_000_000 || item.MarketCap > 500_000_000 {
 			continue
 		}
-		dollarVol := item.Volume * item.Price
+		dollarVol := item.Volume * item.Price // approx: avg share volume × current price
 		if dollarVol < 300_000 {
 			continue
 		}

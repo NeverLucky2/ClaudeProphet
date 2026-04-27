@@ -38,8 +38,8 @@ func TestPennyUniverseService_HTTPRefresh(t *testing.T) {
 	defer ts.Close()
 
 	svc := NewPennyUniverseService("testkey", ts.Client())
-	// Test filter() directly; verify GetTickers returns non-empty after a successful parse.
-	svc.universe = svc.filter(items)
+	svc.fmpBaseURL = ts.URL
+	svc.refresh()
 	tickers := svc.GetTickers()
 	if len(tickers) != 1 || tickers[0] != "TEST" {
 		t.Errorf("expected [TEST], got %v", tickers)
