@@ -36,6 +36,7 @@ func NewPennyScreenerService(apiKey, secretKey string, universe *PennyUniverseSe
 	client := alpacaMarket.NewClient(alpacaMarket.ClientOpts{
 		APIKey:    apiKey,
 		APISecret: secretKey,
+		Feed:      alpacaMarket.IEX,
 	})
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
@@ -88,6 +89,7 @@ func (s *PennyScreenerService) scan() {
 		}
 		s.scanChunk(tickers[i:end])
 	}
+	s.logger.WithField("symbols", len(tickers)).Info("PennyScreenerService: scan complete")
 }
 
 func (s *PennyScreenerService) scanChunk(tickers []string) {
@@ -102,14 +104,14 @@ func (s *PennyScreenerService) scanChunk(tickers []string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for ticker, snap := range snapshots {
-		_, entry := s.computeEntry(ticker, snap)
+		entry := s.computeEntry(ticker, snap)
 		s.scores[ticker] = entry
 	}
 }
 
-func (s *PennyScreenerService) computeEntry(ticker string, snap *alpacaMarket.Snapshot) (float64, TechnicalEntry) {
+func (s *PennyScreenerService) computeEntry(ticker string, snap *alpacaMarket.Snapshot) TechnicalEntry {
 	if snap == nil || snap.DailyBar == nil || snap.PrevDailyBar == nil {
-		return 0, TechnicalEntry{UpdatedAt: time.Now()}
+		return TechnicalEntry{UpdatedAt: time.Now()}
 	}
 
 	var volumeRatio float64
@@ -135,13 +137,13 @@ func (s *PennyScreenerService) computeEntry(ticker string, snap *alpacaMarket.Sn
 	breakoutScore := breakoutBonus * 10.0
 	total := volScore + gapScore + breakoutScore
 
-	context := fmt.Sprintf("vol_ratio=%.1fx gap=%.1f%% breakout_near=%v", volumeRatio, gapPct, breakoutBonus > 0)
+	signalSummary := fmt.Sprintf("vol_ratio=%.1fx gap=%.1f%% breakout_near=%v", volumeRatio, gapPct, breakoutBonus > 0)
 	entry := TechnicalEntry{
 		Score:       total,
 		VolumeRatio: volumeRatio,
 		GapPct:      gapPct,
-		Context:     context,
+		Context:     signalSummary,
 		UpdatedAt:   time.Now(),
 	}
-	return total, entry
+	return entry
 }

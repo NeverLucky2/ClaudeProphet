@@ -27,10 +27,10 @@ func TestPennyScreenerService_ComputeEntry_HighVolume(t *testing.T) {
 			Volume: 100_000,
 		},
 	}
-	score, entry := svc.computeEntry("TEST", snap)
-	// volumeRatio=5.0 → volScore=20; gapPct=10% → gapScore=10; breakoutBonus=0 (close 5.9 < high 6.0 - 2%)
-	if score < 25 {
-		t.Errorf("expected score >=25 for high-volume entry, got %f", score)
+	entry := svc.computeEntry("TEST", snap)
+	// volumeRatio=5.0 → volScore=20; gapPct=10% → gapScore=10; distFromHigh=(6.0-5.9)/6.0≈0.0167 ≤ 0.02 → breakoutScore=10; total=40
+	if entry.Score != 40.0 {
+		t.Errorf("expected score=40.0 for high-volume entry, got %f", entry.Score)
 	}
 	if entry.VolumeRatio != 5.0 {
 		t.Errorf("expected volumeRatio=5.0, got %f", entry.VolumeRatio)
@@ -39,9 +39,21 @@ func TestPennyScreenerService_ComputeEntry_HighVolume(t *testing.T) {
 
 func TestPennyScreenerService_ComputeEntry_NilSnapshot(t *testing.T) {
 	svc := &PennyScreenerService{scores: make(map[string]TechnicalEntry), logger: newTestLogger()}
-	score, _ := svc.computeEntry("TEST", nil)
-	if score != 0 {
-		t.Errorf("expected 0 for nil snapshot, got %f", score)
+	entry := svc.computeEntry("TEST", nil)
+	if entry.Score != 0 {
+		t.Errorf("expected 0 for nil snapshot, got %f", entry.Score)
+	}
+}
+
+func TestPennyScreenerService_ComputeEntry_PartialNil(t *testing.T) {
+	svc := &PennyScreenerService{scores: make(map[string]TechnicalEntry), logger: newTestLogger()}
+	snap := &alpacaMarket.Snapshot{
+		DailyBar: &alpacaMarket.Bar{Open: 5.5, High: 6.0, Low: 5.0, Close: 5.9, Volume: 100_000},
+		// PrevDailyBar intentionally nil
+	}
+	entry := svc.computeEntry("TEST", snap)
+	if entry.Score != 0 {
+		t.Errorf("expected 0 score for partial-nil snapshot, got %f", entry.Score)
 	}
 }
 
