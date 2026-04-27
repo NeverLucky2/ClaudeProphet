@@ -126,7 +126,7 @@ func TestSECEdgarService_FetchRSS_ParsesTwoItems(t *testing.T) {
 	// Verify the ticker-match logic
 	found := false
 	for _, item := range items {
-		combined := item.Title + " " + item.Description
+		combined := strings.ToUpper(item.Title + " " + item.Description)
 		if strings.Contains(combined, "ACME") {
 			found = true
 		}
