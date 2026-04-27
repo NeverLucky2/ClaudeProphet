@@ -60,7 +60,8 @@ func NewGeminiService(apiKey string) *GeminiService {
 }
 
 // CleanNewsForTrading takes raw news items and creates a token-efficient summary
-// optimized for trading decisions
+// optimized for trading decisions.
+// Note: CleanedNews and countUniqueSources are defined in claude_service.go (same package).
 func (gs *GeminiService) CleanNewsForTrading(newsItems []NewsItem) (*CleanedNews, error) {
 	if len(newsItems) == 0 {
 		return nil, fmt.Errorf("no news items provided")
