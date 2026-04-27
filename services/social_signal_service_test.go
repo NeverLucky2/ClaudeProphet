@@ -64,32 +64,36 @@ func TestMin64(t *testing.T) {
 }
 
 func TestSocialSignalService_SentimentPtsUseMentionPtsBase(t *testing.T) {
+	// Setup: 8 TICK mentions, 2 OTHER mentions → avg=5, TICK velocity=1.6 → mentionPts=8.0
+	// Pre-seed TICK with prior StockTwits sentiment (BaseScore=18 = 8 mention + 10 sentiment).
+	// After recompute, BaseScore should remain 18 (not compound to 28).
 	svc := &SocialSignalService{
 		entries: make(map[string]socialEntry),
 		logger:  logrus.New(),
 	}
 	now := time.Now()
-	// Simulate a state where StockTwits already ran once and added 10 sentimentPts
 	svc.entries["TICK"] = socialEntry{
-		BaseScore:  18.0, // 8 mentionPts + 10 sentimentPts
+		BaseScore:  18.0,
 		MentionPts: 8.0,
 		DetectedAt: now,
-		Context:    "mentions=3 velocity=2.0x st_bullish=70%",
+		Context:    "mentions=8 velocity=1.6x st_bullish=70%",
 	}
-	// Now simulate recomputeRedditScores re-running with same mention counts.
-	// MentionPts = 8 → sentimentPts = existing.BaseScore - existing.MentionPts = 18-8 = 10
-	// new BaseScore = min64(8+10, 20) = 18 — should NOT compound to 28.
-	existing := svc.entries["TICK"]
-	sentimentPts := existing.BaseScore - existing.MentionPts
-	if sentimentPts < 0 {
-		sentimentPts = 0
+	// 8 TICK + 2 OTHER: total=10, avg=5, TICK velocity=1.6, mentionPts=min64(0.8,1)*10=8
+	for i := 0; i < 8; i++ {
+		svc.mentionWindow = append(svc.mentionWindow, mentionRecord{Ticker: "TICK", Timestamp: now})
 	}
-	newMentionPts := 8.0 // same velocity
-	newScore := min64(newMentionPts+sentimentPts, 20.0)
-	if newScore > 20.0 {
-		t.Errorf("score should not exceed 20, got %f", newScore)
+	for i := 0; i < 2; i++ {
+		svc.mentionWindow = append(svc.mentionWindow, mentionRecord{Ticker: "OTHER", Timestamp: now})
 	}
-	if newScore != 18.0 {
-		t.Errorf("expected 18.0 (8 mention + 10 sentiment), got %f", newScore)
+	svc.recomputeRedditScores(now)
+	got := svc.entries["TICK"].BaseScore
+	if got > 20.0 {
+		t.Errorf("BaseScore should not exceed 20, got %f", got)
+	}
+	if got != 18.0 {
+		t.Errorf("expected 18.0 (8 mention + 10 prior sentiment, no compounding), got %f", got)
+	}
+	if svc.entries["TICK"].MentionPts != 8.0 {
+		t.Errorf("expected MentionPts=8.0, got %f", svc.entries["TICK"].MentionPts)
 	}
 }

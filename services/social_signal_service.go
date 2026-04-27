@@ -297,6 +297,7 @@ func (s *SocialSignalService) fetchStockTwits(ticker string) {
 	// so sentiment cannot compound across successive StockTwits polls.
 	newScore := min64(existing.MentionPts+sentimentPts, 20.0)
 	signalCtx := fmt.Sprintf("%s st_bullish=%.0f%%", existing.Context, ratio*100)
+	// DetectedAt is intentionally preserved from the Reddit mention; sentiment ages with the underlying social signal.
 	s.entries[ticker] = socialEntry{BaseScore: newScore, MentionPts: existing.MentionPts, DetectedAt: existing.DetectedAt, Context: signalCtx}
 }
 
