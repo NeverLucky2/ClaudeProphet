@@ -15,7 +15,6 @@ Connect the Sandboxes and Accounts tabs so users can create a new sandbox direct
 
 ## Non-Goals
 
-- Changes to the backend API (no new endpoints)
 - Changes to the Sandboxes tab's existing "New Sandbox" manual-entry flow
 - Removing status badges from the Accounts tab (kept as read-only display)
 
@@ -71,12 +70,46 @@ Active Sandboxes          [New Sandbox]  [From Account]
 
 The `controls` variable in `renderAccounts()` (currently lines 3184–3186 in `index.html`) is deleted entirely. The card's action row retains View, Configure, Delete.
 
+### 4. Env-Seeded Second Account
+
+On server startup, after `loadConfig()`, `server.js` checks for a second set of Alpaca credentials in env vars. If present and not already stored, it auto-creates the account.
+
+**New env vars (all optional; seeding only runs if `ALPACA_PUBLIC_KEY_2` and `ALPACA_SECRET_KEY_2` are both set):**
+
+| Variable | Default | Notes |
+|---|---|---|
+| `ALPACA_PUBLIC_KEY_2` | — | Public/API key for second account |
+| `ALPACA_SECRET_KEY_2` | — | Secret key for second account |
+| `ALPACA_ENDPOINT_2` | auto-detected | Base URL; auto-set from `ALPACA_PAPER_2` if omitted |
+| `ALPACA_PAPER_2` | `true` | `true` = paper trading, `false` = live |
+| `ALPACA_NAME_2` | `"Account 2"` | Display name shown in the UI |
+
+**Seeding logic (runs once after `loadConfig()`):**
+1. If `ALPACA_PUBLIC_KEY_2` and `ALPACA_SECRET_KEY_2` are set in `process.env`:
+2. Check whether any existing account has `publicKey === process.env.ALPACA_PUBLIC_KEY_2`
+3. If not found, call `addAccount({ name, publicKey, secretKey, baseUrl, paper })` — this also auto-creates the linked sandbox
+4. Log the newly seeded account name to console
+
+The check is idempotent — restarting the server with the same env vars never creates duplicate accounts.
+
+**`.env.example` additions** (commented out to signal they are optional):
+
+```
+# Second Alpaca account (optional — auto-creates a second sandbox on startup)
+# ALPACA_NAME_2=Account 2
+# ALPACA_PUBLIC_KEY_2=your_second_public_key
+# ALPACA_SECRET_KEY_2=your_second_secret_key
+# ALPACA_ENDPOINT_2=https://paper-api.alpaca.markets
+# ALPACA_PAPER_2=true
+```
+
 ## Files Changed
 
 | File | Change |
 |---|---|
 | `agent/public/index.html` | Add "From Account" button to Sandboxes header; add `sandbox-from-account` modal branch in `showModal()`; add `submitSandboxFromAccount()` function; remove `controls` from `renderAccounts()` |
-| `agent/server.js` | Add `POST /api/accounts/:id/clone` route that reads source account credentials and creates a new account+sandbox |
+| `agent/server.js` | Add `POST /api/accounts/:id/clone` route; add env-seeding block after `loadConfig()` |
+| `.env.example` | Add commented-out second-account env vars |
 
 ## Open Questions
 
