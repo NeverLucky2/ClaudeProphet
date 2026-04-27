@@ -2385,7 +2385,7 @@ async function submitSandboxCreate() {
     if (sandboxId && profileId) {
       await fetch('/api/heartbeat/apply-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sandboxId, profileId }),
+        body: JSON.stringify({ sandboxId, profile: profileId }),
       });
     }
     closeModal();
