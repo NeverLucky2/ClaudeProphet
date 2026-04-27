@@ -28,7 +28,8 @@ type mentionRecord struct {
 }
 
 type socialEntry struct {
-	BaseScore  float64
+	BaseScore  float64   // total score = MentionPts + sentimentPts (capped at 20)
+	MentionPts float64   // Reddit mention velocity component (0–10)
 	DetectedAt time.Time
 	Context    string
 }
@@ -185,6 +186,8 @@ func (s *SocialSignalService) recomputeRedditScores(now time.Time) {
 	}
 	avgCount := 1
 	if len(counts) > 0 {
+		// Integer division intentional; floor at 1 ensures velocity >= 1.0 for any ticker with mentions.
+		// A lone-mention ticker on a quiet day scores the same as on a busy day (both get velocity=1.0).
 		avg := total / len(counts)
 		if avg > 1 {
 			avgCount = avg
@@ -193,19 +196,25 @@ func (s *SocialSignalService) recomputeRedditScores(now time.Time) {
 	for ticker, count := range counts {
 		velocity := float64(count) / float64(avgCount)
 		mentionPts := min64(velocity/2.0, 1.0) * 10.0
-		// Preserve any existing StockTwits sentiment by reading the old entry's sentimentPts component.
-		// sentimentPts is the portion of the existing score above the mention portion.
+		// Preserve any existing StockTwits sentiment by reading the clean prior value.
 		var sentimentPts float64
 		if existing, ok := s.entries[ticker]; ok {
-			oldMentionPts := min64((float64(count)/float64(avgCount))/2.0, 1.0) * 10.0
-			sentimentPts = existing.BaseScore - oldMentionPts
+			sentimentPts = existing.BaseScore - existing.MentionPts
 			if sentimentPts < 0 {
 				sentimentPts = 0
 			}
 		}
 		score := min64(mentionPts+sentimentPts, 20.0)
 		signalCtx := fmt.Sprintf("mentions=%d velocity=%.1fx", count, velocity)
-		s.entries[ticker] = socialEntry{BaseScore: score, DetectedAt: now, Context: signalCtx}
+		s.entries[ticker] = socialEntry{BaseScore: score, MentionPts: mentionPts, DetectedAt: now, Context: signalCtx}
+	}
+
+	// Evict stale entries for tickers that are no longer in counts (no recent mentions).
+	// This prevents unbounded map growth.
+	for ticker := range s.entries {
+		if _, hasMentions := counts[ticker]; !hasMentions {
+			delete(s.entries, ticker)
+		}
 	}
 }
 
@@ -217,7 +226,8 @@ func (s *SocialSignalService) pollStockTwitsForTopMentioned() {
 	}
 	var ranked []kv
 	for t, e := range s.entries {
-		ranked = append(ranked, kv{t, e.BaseScore})
+		decayed := scoreWithDecay(e.BaseScore, e.DetectedAt, socialHalfLifeHours)
+		ranked = append(ranked, kv{t, decayed})
 	}
 	s.mu.RUnlock()
 
@@ -283,11 +293,11 @@ func (s *SocialSignalService) fetchStockTwits(ticker string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	existing := s.entries[ticker]
-	// Re-derive mention points from context to avoid compounding sentiment across updates.
-	// Add sentiment on top of the existing mention-only score (capped at 20).
-	newScore := min64(existing.BaseScore+sentimentPts, 20.0)
+	// Always recalculate from the clean mention base (MentionPts), never from BaseScore,
+	// so sentiment cannot compound across successive StockTwits polls.
+	newScore := min64(existing.MentionPts+sentimentPts, 20.0)
 	signalCtx := fmt.Sprintf("%s st_bullish=%.0f%%", existing.Context, ratio*100)
-	s.entries[ticker] = socialEntry{BaseScore: newScore, DetectedAt: existing.DetectedAt, Context: signalCtx}
+	s.entries[ticker] = socialEntry{BaseScore: newScore, MentionPts: existing.MentionPts, DetectedAt: existing.DetectedAt, Context: signalCtx}
 }
 
 func min64(a, b float64) float64 {
