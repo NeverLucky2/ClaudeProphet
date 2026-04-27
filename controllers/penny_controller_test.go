@@ -22,6 +22,9 @@ func setupPennyRouter(agg *services.PennySignalAggregator) *gin.Engine {
 	return r
 }
 
+// emptyAggregator creates an aggregator with zero-value sub-services.
+// Safe because these tests only exercise the HTTP layer — aggregate() is never called,
+// so the unexported maps and clients on the sub-services are never accessed.
 func emptyAggregator() *services.PennySignalAggregator {
 	return services.NewPennySignalAggregator(
 		&services.PennyUniverseService{},
@@ -29,6 +32,15 @@ func emptyAggregator() *services.PennySignalAggregator {
 		&services.SECEdgarService{},
 		&services.SocialSignalService{},
 	)
+}
+
+func parseBody(t *testing.T, w *httptest.ResponseRecorder) map[string]interface{} {
+	t.Helper()
+	var body map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to parse response body: %v", err)
+	}
+	return body
 }
 
 func TestPennyController_GetCandidates_Empty(t *testing.T) {
@@ -39,8 +51,7 @@ func TestPennyController_GetCandidates_Empty(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", w.Code)
 	}
-	var body map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &body)
+	body := parseBody(t, w)
 	if body["count"].(float64) != 0 {
 		t.Errorf("expected count=0, got %v", body["count"])
 	}
@@ -74,8 +85,7 @@ func TestPennyController_ScanNow(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", w.Code)
 	}
-	var body map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &body)
+	body := parseBody(t, w)
 	if body["status"] != "refreshing" {
 		t.Errorf("expected status=refreshing, got %v", body["status"])
 	}
@@ -89,8 +99,7 @@ func TestPennyController_GetUniverse_Empty(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", w.Code)
 	}
-	var body map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &body)
+	body := parseBody(t, w)
 	if body["count"].(float64) != 0 {
 		t.Errorf("expected count=0, got %v", body["count"])
 	}
