@@ -1124,7 +1124,10 @@
         <p class="subtitle">Each sandbox is an independent agent instance with its own account, heartbeat schedule, and permissions.</p>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <div class="section-title" style="margin:0">Active Sandboxes</div>
-          <button class="btn primary sm" onclick="showModal('sandbox-create')">New Sandbox</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary sm" onclick="showModal('sandbox-create')">New Sandbox</button>
+            <button class="btn sm" id="btn-from-account" onclick="showModal('sandbox-from-account')">From Account</button>
+          </div>
         </div>
         <div id="sandboxes-tab-list"></div>
       </div>
@@ -2273,6 +2276,13 @@ function renderSandboxesTab() {
       '</div>' +
     '</div>';
   }).join('');
+
+  const btnFromAccount = document.getElementById('btn-from-account');
+  if (btnFromAccount) {
+    const hasAccounts = (config.accounts || []).length > 0;
+    btnFromAccount.disabled = !hasAccounts;
+    btnFromAccount.title = hasAccounts ? '' : 'Add an account first in the Accounts tab';
+  }
 }
 
 function toggleSbxHb(sandboxId) {
